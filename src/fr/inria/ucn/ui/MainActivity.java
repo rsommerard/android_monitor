@@ -336,8 +336,6 @@ public class MainActivity extends Activity implements Handler.Callback {
 		
 		// service will broadcast the new uptime value to the UI - refresh the ui then
 		startService(intent);
-		
-		// TODO: launch the VPN tunnel ?
 	}
 
 	/**

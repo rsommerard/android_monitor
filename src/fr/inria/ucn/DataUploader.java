@@ -48,7 +48,7 @@ import android.util.Log;
  */
 public final class DataUploader {
 
-	public static final String DEFAULT_URL = "https://cmon.lip6.fr/upload/ucntest";
+	public static final String DEFAULT_URL = "https://cmon.lip6.fr/upload";
 	public static final String DEFAULT_FILE = Environment.getExternalStorageDirectory().getPath()+"/ucndata.log";
 
 	private static final String LF = "\r\n";

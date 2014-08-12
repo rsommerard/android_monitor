@@ -39,7 +39,7 @@ import android.util.Log;
  * @author Anna-Kaisa Pietilainen <anna-kaisa.pietilainen@inria.fr>
  *
  */
-public class OpenVPNStatusCollector extends Collector {
+public class OpenVPNStatusCollector implements Collector {
 
 	// for handling OpenVPN
 	private IOpenVPNAPIService api = null;

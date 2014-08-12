@@ -38,9 +38,13 @@ import fr.inria.ucn.Constants;
 import fr.inria.ucn.Helpers;
 
 import android.annotation.SuppressLint;
+import android.content.BroadcastReceiver;
 import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.wifi.ScanResult;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.provider.Settings;
@@ -63,7 +67,7 @@ import android.util.Log;
  * @author Anna-Kaisa Pietilainen <anna-kaisa.pietilainen@inria.fr>
  *
  */
-public class NetworkStateCollector extends Collector {
+public class NetworkStateCollector extends BroadcastReceiver implements Collector {
 
 	/**
 	 * 
@@ -72,7 +76,7 @@ public class NetworkStateCollector extends Collector {
 	 * @param change
 	 */
 	@SuppressWarnings("deprecation")
-	@SuppressLint("NewApi")
+	@SuppressLint({ "NewApi", "DefaultLocale" })
 	public void run(Context c, long ts, boolean change) {
 		try {
 			JSONObject data = new JSONObject();
@@ -82,7 +86,7 @@ public class NetworkStateCollector extends Collector {
 			TelephonyManager tm = (TelephonyManager)c.getSystemService(Context.TELEPHONY_SERVICE);		
 
 			NetworkInfo ni = cm.getActiveNetworkInfo();
-			data.put("onchange", change); // this collection run was triggered by network change
+			data.put("on_network_state_change", change); // this collection run was triggered by network change
 			data.put("is_connected", (ni != null && ni.isConnectedOrConnecting()));
 			data.put("is_roaming", tm.isNetworkRoaming());
 			
@@ -241,10 +245,16 @@ public class NetworkStateCollector extends Collector {
 					// get details on active wifi network
 					WifiManager wm = (WifiManager) c.getSystemService(Context.WIFI_SERVICE);
 					WifiInfo wi = wm.getConnectionInfo();
+
+					Helpers.acquireWifiLock(c);
+					IntentFilter filter = new IntentFilter(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION);
+					c.registerReceiver(this, filter);
+					wm.startScan();
 					
 					JSONObject jni = new JSONObject();
 					jni.put("link_speed",wi.getLinkSpeed());
 					jni.put("link_speed_units",WifiInfo.LINK_SPEED_UNITS);
+					jni.put("signal_level",WifiManager.calculateSignalLevel(wi.getRssi(), 100));
 					jni.put("rssi",wi.getRssi());
 					jni.put("bssid",wi.getBSSID());
 					jni.put("ssid",wi.getSSID().replaceAll("\"", ""));
@@ -291,47 +301,76 @@ public class NetworkStateCollector extends Collector {
 				Log.d(Constants.LOGTAG, "failed to list interfaces", e);
 			}
 			
+			JSONArray ifaces = new JSONArray();
 			if (en!=null) {
-				JSONArray ifaces = new JSONArray();
 				while (en.hasMoreElements()) {
-					try {
-						NetworkInterface intf = en.nextElement();
+					NetworkInterface intf = en.nextElement();
 
-						JSONObject iface = new JSONObject();
+					JSONObject iface = new JSONObject();
+					iface.put("display_name", intf.getDisplayName());
+					iface.put("name", intf.getName());
+					iface.put("is_virtual", intf.isVirtual());
+					iface.put("stats", stats.get(intf.getName()));
+
+					try {						
 						iface.put("mtu", intf.getMTU());
-						iface.put("display_name", intf.getDisplayName());
-						iface.put("name", intf.getName());
 						iface.put("is_loopback", intf.isLoopback());
 						iface.put("is_ptop", intf.isPointToPoint());
 						iface.put("is_up", intf.isUp());
-						iface.put("is_virtual", intf.isVirtual());
-						iface.put("stats", stats.get(intf.getName()));
-						
-						JSONArray ips = new JSONArray();
-						List<InterfaceAddress> ilist = intf.getInterfaceAddresses();
-						for (InterfaceAddress ia : ilist) {
-							ips.put(ia.getAddress().getHostAddress());
-						}
-						iface.put("addresses", ips);
-						
 					} catch (SocketException e) {
-						Log.d(Constants.LOGTAG, "failed to read interface", e);
+						Log.d(Constants.LOGTAG, "failed to read interface data", e);
 					}
+					
+					JSONArray ips = new JSONArray();
+					List<InterfaceAddress> ilist = intf.getInterfaceAddresses();
+					for (InterfaceAddress ia : ilist) {
+						ips.put(ia.getAddress().getHostAddress());
+					}
+					iface.put("addresses", ips);						
+					
+					ifaces.put(iface);
 				}
-				data.put("net_interfaces", ifaces);
 			} else {
-				Log.d(Constants.LOGTAG, "getNetworkInterfaces returns null");				
+				for (String name : stats.keySet()) {
+					JSONObject iface = new JSONObject();
+					iface.put("name", name);
+					iface.put("stats", stats.get(name));		
+					ifaces.put(iface);
+				}
 			}
+			data.put("net_interfaces", ifaces);
 
-			// TODO: does this always work in fact?
-			// lets try from the cmd line
+			List<String> netstat = Helpers.readProc("/proc/net/netstat");
+			if (netstat!=null && netstat.size()==4) {
+				JSONObject jnetstat = new JSONObject();
+				
+				String[] tcpHeaders = netstat.get(0).split("\\s+");
+				String[] tcpVals = netstat.get(1).split("\\s+");
+				JSONObject tcp = new JSONObject();
+				for (int i = 1; i < tcpHeaders.length; i++) {
+					tcp.put(tcpHeaders[i].toLowerCase(), Long.parseLong(tcpVals[i]));
+				}
+				jnetstat.put("tcp", tcp);
+				
+				String[] ipHeaders = netstat.get(2).split("\\s+");
+				String[] ipVals = netstat.get(3).split("\\s+");
+				JSONObject ip = new JSONObject();
+				for (int i = 1; i < ipHeaders.length; i++) {
+					ip.put(ipHeaders[i].toLowerCase(), Long.parseLong(ipVals[i]));
+				}
+				jnetstat.put("ip", ip);
+				
+				data.put("netstat", jnetstat);
+			}
+			
+			// Interfaces from shell TODO: does this always work in fact?
 			Process process = null;
 			BufferedReader in = null;
 			try {
 			    process = Runtime.getRuntime().exec("ip addr show");
 			    in = new BufferedReader(new InputStreamReader(process.getInputStream()));
 			    String line = null;
-				JSONArray ifaces = new JSONArray();
+				ifaces = new JSONArray();
 				JSONObject iface = null;
 			    while ((line = in.readLine())!=null) {
 			    	line = line.trim();
@@ -402,4 +441,41 @@ public class NetworkStateCollector extends Collector {
 	public void run(Context c, long ts) {
 		run(c,ts,false);
 	}	
+	
+	/*
+	 * (non-Javadoc)
+	 * @see android.content.BroadcastReceiver#onReceive(android.content.Context, android.content.Intent)
+	 */
+	@SuppressLint("NewApi")
+	@Override
+	public void onReceive(Context context, Intent intent) {
+		long ts = System.currentTimeMillis();
+		if (intent.getAction().equals(WifiManager.SCAN_RESULTS_AVAILABLE_ACTION)) {
+			context.unregisterReceiver(this);			
+			try {
+				JSONArray neighs = new JSONArray();
+				WifiManager wm = (WifiManager) context.getSystemService(Context.WIFI_SERVICE);	
+				for (ScanResult r : wm.getScanResults()) {
+					JSONObject o = new JSONObject();
+					o.put("frequency", r.frequency);
+					o.put("level", r.level);
+					if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.JELLY_BEAN_MR1) {
+						o.put("timestamp", r.timestamp);
+					}
+					o.put("bssid", r.BSSID);
+					o.put("ssid", r.SSID);
+					neighs.put(o);
+				}
+				
+				JSONObject wifi = new JSONObject();
+				wifi.put("list", neighs);				
+				Helpers.sendResultObj(context, "wifi_neigh", ts, wifi);	
+				
+			} catch (JSONException jex) {
+				Log.w(Constants.LOGTAG, "failed to create json object",jex);				
+			}
+			// this will clean the CPU lock too if running on the bg
+			Helpers.releaseWifiLock();
+		}
+	}
 }

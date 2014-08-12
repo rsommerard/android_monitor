@@ -32,6 +32,7 @@ import fr.inria.ucn.Constants;
 import fr.inria.ucn.Helpers;
 
 import android.annotation.SuppressLint;
+import android.app.ActivityManager;
 import android.content.Context;
 import android.net.TrafficStats;
 import android.util.Log;
@@ -42,57 +43,28 @@ import android.util.Log;
  * @author Anna-Kaisa Pietilainen <anna-kaisa.pietilainen@inria.fr>
  *
  */
-public class AppDataUsageCollector extends Collector {
+public class AppDataUsageCollector implements Collector {
 
 	private static final String PROC_UID_STAT = "/proc/uid_stat";
 
 	/* (non-Javadoc)
 	 * @see fr.inria.ucn.collectors.Collector#run(android.content.Context)
 	 */
-	@SuppressWarnings("deprecation")
-	@SuppressLint("NewApi")
 	@Override
 	public void run(Context c, long ts) {	
 		try {
 			// data used per app
 			JSONArray parray = new JSONArray();
+			
 			File f = new File(PROC_UID_STAT);
 			if (f.exists() && f.isDirectory() && f.canRead()) {
 				for (String dir: f.list()) {
-					int uid = Integer.parseInt(dir);
-					
-					// uid + related package list
-					JSONObject pinfo = new JSONObject();
-					pinfo.put("uid", uid);
-					pinfo.put("packages", Helpers.getPackagesForUid(c,uid));
-					
-					// simple TCP stats
-					JSONObject tcp = new JSONObject();
-					tcp.put("send", getSysLongValue(PROC_UID_STAT + "/" +uid+ "/tcp_snd"));
-					tcp.put("recv", getSysLongValue(PROC_UID_STAT + "/" +uid+ "/tcp_rcv"));
-					pinfo.put("proc_uid_stat_tcp",tcp);
-					
-					// complete traffic stats (may not be available)
-					JSONObject tstat = new JSONObject();
-					tstat.put("uid_rx_bytes", TrafficStats.getUidRxBytes(uid));
-					tstat.put("uid_tx_bytes", TrafficStats.getUidTxBytes(uid));
-					
-					if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.HONEYCOMB_MR1) {
-						tstat.put("uid_rx_pkts", TrafficStats.getUidRxPackets(uid));
-						tstat.put("uid_tx_pkts", TrafficStats.getUidTxPackets(uid));
-						tstat.put("uid_tcp_rx_pkts", TrafficStats.getUidTcpRxSegments(uid));
-						tstat.put("uid_tcp_tx_pkts", TrafficStats.getUidTcpTxSegments(uid));
-						tstat.put("uid_udp_rx_pkts", TrafficStats.getUidUdpRxPackets(uid));
-						tstat.put("uid_udp_tx_pkts", TrafficStats.getUidUdpTxPackets(uid));
-						tstat.put("uid_udp_rx_bytes", TrafficStats.getUidUdpRxBytes(uid));
-						tstat.put("uid_udp_tx_bytes", TrafficStats.getUidUdpTxBytes(uid));
-						tstat.put("uid_tcp_rx_bytes", TrafficStats.getUidTcpRxBytes(uid));
-						tstat.put("uid_tcp_tx_bytes", TrafficStats.getUidTcpTxBytes(uid));
-					}
-					
-					pinfo.put("android_traffic_stats", tstat);
-					
-					parray.put(pinfo);
+					parray.put(getProcInfo(c, Integer.parseInt(dir)));
+				}
+			} else {
+				ActivityManager am = (ActivityManager) c.getSystemService(Context.ACTIVITY_SERVICE);
+				for (ActivityManager.RunningAppProcessInfo pinfo : am.getRunningAppProcesses()) {
+					parray.put(getProcInfo(c, pinfo.uid));					
 				}
 			}
 			
@@ -104,7 +76,44 @@ public class AppDataUsageCollector extends Collector {
 		}		
 	}
 	
-	/* Read a long value from a file. */
+	/* Build process info object. */
+	@SuppressWarnings("deprecation")
+	@SuppressLint("NewApi")
+	private JSONObject getProcInfo(Context c, int uid) throws JSONException {
+		// uid + related package list
+		JSONObject pinfo = new JSONObject();
+		pinfo.put("uid", uid);
+		pinfo.put("packages", Helpers.getPackagesForUid(c,uid));
+		
+		// simple TCP stats
+		JSONObject tcp = new JSONObject();
+		tcp.put("send", getSysLongValue(PROC_UID_STAT + "/" +uid+ "/tcp_snd"));
+		tcp.put("recv", getSysLongValue(PROC_UID_STAT + "/" +uid+ "/tcp_rcv"));
+		pinfo.put("proc_uid_stat_tcp",tcp);
+		
+		// complete traffic stats (may not be available)
+		JSONObject tstat = new JSONObject();
+		tstat.put("uid_rx_bytes", TrafficStats.getUidRxBytes(uid));
+		tstat.put("uid_tx_bytes", TrafficStats.getUidTxBytes(uid));
+		
+		if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.HONEYCOMB_MR1) {
+			tstat.put("uid_rx_pkts", TrafficStats.getUidRxPackets(uid));
+			tstat.put("uid_tx_pkts", TrafficStats.getUidTxPackets(uid));
+			tstat.put("uid_tcp_rx_pkts", TrafficStats.getUidTcpRxSegments(uid));
+			tstat.put("uid_tcp_tx_pkts", TrafficStats.getUidTcpTxSegments(uid));
+			tstat.put("uid_udp_rx_pkts", TrafficStats.getUidUdpRxPackets(uid));
+			tstat.put("uid_udp_tx_pkts", TrafficStats.getUidUdpTxPackets(uid));
+			tstat.put("uid_udp_rx_bytes", TrafficStats.getUidUdpRxBytes(uid));
+			tstat.put("uid_udp_tx_bytes", TrafficStats.getUidUdpTxBytes(uid));
+			tstat.put("uid_tcp_rx_bytes", TrafficStats.getUidTcpRxBytes(uid));
+			tstat.put("uid_tcp_tx_bytes", TrafficStats.getUidTcpTxBytes(uid));
+		}
+		
+		pinfo.put("android_traffic_stats", tstat);					
+		return pinfo;
+	}
+	
+	/* Read a long value from a proc file. */
 	private long getSysLongValue(String name) {
 		long res = -1;
 		File f = new File(name);
@@ -121,6 +130,4 @@ public class AppDataUsageCollector extends Collector {
 		}
 		return res;
 	}
-
-	
 }

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="fr.inria.ucn"
-    android:versionCode="3"
-    android:versionName="0.3" >
+    android:versionCode="4"
+    android:versionName="0.4" >
 
     <uses-sdk
         android:minSdkVersion="11"
@@ -23,10 +23,12 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+    <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.READ_PHONE_STATE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
     <uses-permission android:name="android.permission.BATTERY_STATS" />
+    
     
     <application
         android:allowBackup="true"
@@ -74,7 +76,7 @@
             </intent-filter>
         </receiver>
 
-        <!-- Boot receiver to restart the scheduled collection, enabled on demand. -->
+        <!-- Boot receiver to restart the scheduled collection, enabled if logger is running. -->
         <receiver
             android:name="fr.inria.ucn.OnBootReceiver"
             android:enabled="false" >
@@ -83,14 +85,14 @@
             </intent-filter>
         </receiver>
 
-        <!-- Network/screen state change collector, enabled on demand -->
+        <!-- Network/screen state change collector, enabled if logger is running -->
         <receiver
             android:name="fr.inria.ucn.listeners.SystemStateListener"
             android:enabled="false" >
             <intent-filter>
                 <action android:name="android.net.conn.CONNECTIVITY_CHANGE" />
             	<action android:name="android.intent.action.USER_PRESENT" />
-	        </intent-filter>            
+	        </intent-filter>
 		</receiver>
 
     </application>

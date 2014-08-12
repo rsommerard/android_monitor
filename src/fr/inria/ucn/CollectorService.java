@@ -101,83 +101,72 @@ public class CollectorService extends IntentService {
 	 * @see android.app.IntentService#onHandleIntent(android.content.Intent)
 	 */
 	@Override
-	protected void onHandleIntent(Intent intent) {
-		Log.d(Constants.LOGTAG, "service handle intent action="+intent.getAction());
+	protected void onHandleIntent(Intent intent) {		
 		long nowts = System.currentTimeMillis();
 		String nows = Long.toString(nowts);
+		Log.d(Constants.LOGTAG, "service handle intent action="+intent.getAction());
 		
 		if (intent.getAction().equals(Constants.ACTION_SCHEDULE)) {
-			try {
-				boolean on = intent.getBooleanExtra(Constants.INTENT_EXTRA_SCHEDULER_START, false);			
-
-				Log.d(Constants.LOGTAG, "set schedule " + (on ? "ON" : "OFF"));
+			boolean on = intent.getBooleanExtra(Constants.INTENT_EXTRA_SCHEDULER_START, false);			
+			Log.d(Constants.LOGTAG, "set schedule " + (on ? "ON" : "OFF"));
 				
-				if (on) {
-					// enable onBootReceiver
-					Log.d(Constants.LOGTAG, "enableReceiver " + OnBootReceiver.class);
-					Helpers.enableReceiver(this.getApplicationContext(), OnBootReceiver.class);
-										
-					// start background listeners
-					Log.d(Constants.LOGTAG, "enableReceiver " + SystemStateListener.class);
-					Helpers.enableReceiver(this.getApplicationContext(), SystemStateListener.class);
-					
-					// FIXME: this listener goes away if the service is killed?
-					Log.d(Constants.LOGTAG, "enable " + psl.getClass().getSimpleName());
-					psl.enable(this.getApplicationContext());
+			if (on) {
+				// enable onBootReceiver
+				Log.d(Constants.LOGTAG, "enableReceiver " + OnBootReceiver.class);
+				Helpers.enableReceiver(this.getApplicationContext(), OnBootReceiver.class);
 
-					// schedule periodic collection
-					Log.d(Constants.LOGTAG,"set alarm");
-					Scheduler.set(getApplicationContext());
-					
-					// run
-					for (Collector c : oneshotCollectors) {
-						Log.d(Constants.LOGTAG, "run " + c.getClass().getSimpleName());
-						c.run(this.getApplicationContext(),nowts);
-					}
-					
-				} else {
-					// set null uptime value in the dstore
-					nows = Constants.NULL_UPTIME;
-					
-					// stop periodic collection
-					Log.d(Constants.LOGTAG,"cancel alarm");
-					Scheduler.cancel(getApplicationContext());
-					
-					// stop background listeners
-					Log.d(Constants.LOGTAG, "disableReceiver " + SystemStateListener.class);
-					Helpers.disableReceiver(this.getApplicationContext(), SystemStateListener.class);
+				// start background listeners
+				Log.d(Constants.LOGTAG, "enableReceiver " + SystemStateListener.class);
+				Helpers.enableReceiver(this.getApplicationContext(), SystemStateListener.class);
 
-					Log.d(Constants.LOGTAG, "disable " + psl.getClass().getSimpleName());
-					psl.disable(this.getApplicationContext());
-					
-					// disable onBootReceiver
-					Log.d(Constants.LOGTAG, "disableReceiver " + OnBootReceiver.class);
-					Helpers.disableReceiver(this.getApplicationContext(), OnBootReceiver.class);
-				}
+				// FIXME: this listener goes away if the service is killed?
+				Log.d(Constants.LOGTAG, "enable " + psl.getClass().getSimpleName());
+				psl.enable(this.getApplicationContext());
 
-				// run for the first/last time
-				for (Collector c : periodicCollectors) {
+				// schedule periodic collection
+				Log.d(Constants.LOGTAG,"set alarm");
+				Scheduler.set(getApplicationContext());
+
+				// run onetime collectors
+				for (Collector c : oneshotCollectors) {
 					Log.d(Constants.LOGTAG, "run " + c.getClass().getSimpleName());
-					c.run(this.getApplicationContext(), nowts);
+					c.run(this.getApplicationContext(),nowts);
 				}
 
-				// store the uptime value and notify the UI
-				dstore.addKeyValue(Constants.STATUS_RUNNING_SINCE, nows);
-				sendStatusBcast(Constants.STATUS_RUNNING_SINCE, nows);					
-
-				if (!on) {
-					// turned off, upload data now
-					if (DataUploader.upload(getApplicationContext(), dstore)) {
-						dstore.addKeyValue(Constants.STATUS_LAST_UPLOAD, nows);
-						sendStatusBcast(Constants.STATUS_LAST_UPLOAD, nows);	
-					} else {
-						Log.w(Constants.LOGTAG, "data upload failed");
-						sendStatusBcast(Constants.STATUS_LAST_UPLOAD_FAILED, null);					
-					}
-				}
+			} else { // schedule OFF
 				
-			} catch (CollectorException ex) {
-				Log.w(Constants.LOGTAG, "scheduling failed",ex);
+				// set null uptime value in the dstore
+				nows = Constants.NULL_UPTIME;
+
+				// stop periodic collection
+				Log.d(Constants.LOGTAG,"cancel alarm");
+				Scheduler.cancel(getApplicationContext());
+
+				// stop background listeners
+				Log.d(Constants.LOGTAG, "disableReceiver " + SystemStateListener.class);
+				Helpers.disableReceiver(this.getApplicationContext(), SystemStateListener.class);
+
+				Log.d(Constants.LOGTAG, "disable " + psl.getClass().getSimpleName());
+				psl.disable(this.getApplicationContext());
+
+				// disable onBootReceiver
+				Log.d(Constants.LOGTAG, "disableReceiver " + OnBootReceiver.class);
+				Helpers.disableReceiver(this.getApplicationContext(), OnBootReceiver.class);
+			}
+			
+			// notify UI
+			sendStatusBcast(Constants.STATUS_RUNNING_SINCE, nows);			
+
+			// queue first/last collect action
+			Intent sintent = new Intent(this.getApplicationContext(), CollectorService.class);
+			sintent.setAction(Constants.ACTION_COLLECT);
+			startService(sintent);
+
+			if (!on) {
+				// turned off, queue upload action
+				Intent sintent2 = new Intent(this.getApplicationContext(), CollectorService.class);
+				sintent2.setAction(Constants.ACTION_UPLOAD);
+				startService(sintent2);
 			}
 			
 		} else if (intent.getAction().equals(Constants.ACTION_COLLECT)) {
@@ -202,11 +191,14 @@ public class CollectorService extends IntentService {
 				Log.w(Constants.LOGTAG, "data upload failed");
 				sendStatusBcast(Constants.STATUS_LAST_UPLOAD_FAILED, null);					
 			}
+			
 		} else if (intent.getAction().equals(Constants.ACTION_RELEASE_WL)) {
 			Helpers.releaseLock();
 		}
 		
-		if (intent.getBooleanExtra(Constants.INTENT_EXTRA_RELEASE_WL, false)) {
+		if (intent.getBooleanExtra(Constants.INTENT_EXTRA_RELEASE_WL, false) &&
+				!intent.getAction().equals(Constants.ACTION_RELEASE_WL)) 
+		{
 			// wakelock release requested - pass the action through the message queue
 			// so that the service has time to handle any other queued work before
 			// going back to sleep

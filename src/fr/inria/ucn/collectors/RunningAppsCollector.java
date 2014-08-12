@@ -40,7 +40,7 @@ import android.util.Log;
  * @author Anna-Kaisa Pietilainen <anna-kaisa.pietilainen@inria.fr>
  *
  */
-public class RunningAppsCollector extends Collector {
+public class RunningAppsCollector implements Collector {
 	
 	/* (non-Javadoc)
 	 * @see fr.inria.ucn.collectors.Collector#run()
@@ -88,44 +88,17 @@ public class RunningAppsCollector extends Collector {
 				runTaskArray.put(jinfo);
 			}
 			data.put("runningTasks", runTaskArray);
-
-			// recent tasks
-			JSONArray recTaskArray = new JSONArray();
-			List<ActivityManager.RecentTaskInfo> recentInfo = am.getRecentTasks(50, ActivityManager.RECENT_WITH_EXCLUDED);
-			first = true;
-			for (ActivityManager.RecentTaskInfo info : recentInfo) {
+			
+			// processes
+			JSONArray runProcArray = new JSONArray();
+			for (ActivityManager.RunningAppProcessInfo pinfo : am.getRunningAppProcesses()) {
 				JSONObject jinfo = new JSONObject();
-				jinfo.put("task_run_id", info.id); // != 0 if actually running
-				jinfo.put("task_base_intent_action", info.baseIntent.getAction());
-				jinfo.put("task_base_intent_data", info.baseIntent.getDataString());
-				
-				if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.HONEYCOMB_MR1) {
-					jinfo.put("task_id", info.persistentId);
-				}
-				
-				// the most recent task
-				jinfo.put("task_first", first);		
-				if (first) {
-					first = false;
-				}
-				
-				if (info.origActivity!=null) {
-					jinfo.put("task_orig_class_name", info.origActivity.getClassName());
-					jinfo.put("task_orig_package_name", info.origActivity.getPackageName());
-					try {
-						// map package name to app label
-						CharSequence appLabel = 
-								pm.getApplicationLabel(
-										pm.getApplicationInfo(
-													info.origActivity.getPackageName(), 
-													PackageManager.GET_META_DATA));
-						jinfo.put("task_app_label", appLabel.toString());
-					} catch (NameNotFoundException e) {
-					}
-				}
-				recTaskArray.put(jinfo);
+				jinfo.put("proc_uid", pinfo.uid);
+				jinfo.put("proc_name", pinfo.processName);
+				jinfo.put("proc_packages", Helpers.getPackagesForUid(c,pinfo.uid));
+				runProcArray.put(jinfo);
 			}
-			data.put("recentTasks", recTaskArray);
+			data.put("runningAppProcesses", runProcArray);
 			
 			// done
 			Helpers.sendResultObj(c,"running_apps",ts,data);

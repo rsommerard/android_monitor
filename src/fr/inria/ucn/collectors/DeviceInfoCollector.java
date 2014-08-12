@@ -34,7 +34,7 @@ import android.util.Log;
  * @author Anna-Kaisa Pietilainen <anna-kaisa.pietilainen@inria.fr>
  *
  */
-public class DeviceInfoCollector extends Collector {
+public class DeviceInfoCollector implements Collector {
 
 	/* (non-Javadoc)
 	 * @see fr.inria.ucn.collectors.Collector#run(android.content.Context)

@@ -46,6 +46,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.PowerManager;
 import android.provider.Settings.Secure;
@@ -66,28 +67,55 @@ public final class Helpers {
 	/* CPU wakelock for keeping the service alive on the background */
 	private static PowerManager.WakeLock lock = null;
 	
+	/* Wifi wakelock for keeping the wifi device alive on the background */
+	private static WifiManager.WifiLock wifilock = null;
+	
 	/**
 	 * Acquire the wakelock to keep the CPU running.
 	 * @param c
 	 */
 	public static synchronized void acquireLock(Context c) {
 		PowerManager mgr = (PowerManager)c.getSystemService(Context.POWER_SERVICE);
-		
-		if (lock==null)
+		if (lock==null) {
 			lock = mgr.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK,Constants.CPU_WAKE_LOCK);		
-		
-		if (!lock.isHeld()) {
-			// released in the service once it's ready
-			lock.acquire();
+			lock.setReferenceCounted(true);
 		}
+		Log.d(Constants.LOGTAG, "acquire lock");
+		lock.acquire();
 	}
 	
 	/**
 	 * Release the wakelock and let CPU sleep.
 	 */
 	public static synchronized void releaseLock() {
-		if (lock!=null && lock.isHeld())
+		Log.d(Constants.LOGTAG, "release lock");
+		if (lock!=null)
 			lock.release();
+	}
+
+	/**
+	 * Acquire the wifi wakelock.
+	 * @param c
+	 */
+	public static synchronized void acquireWifiLock(Context c) {
+		WifiManager mgr = (WifiManager)c.getSystemService(Context.WIFI_SERVICE);
+		if (wifilock==null) {
+			wifilock = mgr.createWifiLock(WifiManager.WIFI_MODE_SCAN_ONLY, "ucn");
+			wifilock.setReferenceCounted(false);
+		}
+		Log.d(Constants.LOGTAG, "acquire wifilock");
+		wifilock.acquire();
+		acquireLock(c);
+	}
+	
+	/**
+	 * Release the wifi wakelock.
+	 */
+	public static synchronized void releaseWifiLock() {
+		Log.d(Constants.LOGTAG, "release wifilock");
+		if (wifilock!=null)
+			wifilock.release();
+		releaseLock();
 	}
 	
     /** Retrieve default preferences object. */

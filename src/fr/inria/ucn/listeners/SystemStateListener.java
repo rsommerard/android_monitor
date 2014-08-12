@@ -23,12 +23,9 @@ import java.util.Random;
 import fr.inria.ucn.CollectorService;
 import fr.inria.ucn.Constants;
 import fr.inria.ucn.Helpers;
-//import fr.inria.ucn.CollectorService;
-//import fr.inria.ucn.Constants;
-//import fr.inria.ucn.Helpers;
 import fr.inria.ucn.collectors.NetworkStateCollector;
 import fr.inria.ucn.collectors.SysStateCollector;
-//import fr.inria.ucn.collectors.SysStateCollector;
+import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -46,6 +43,7 @@ public class SystemStateListener extends BroadcastReceiver {
 	 * (non-Javadoc)
 	 * @see android.content.BroadcastReceiver#onReceive(android.content.Context, android.content.Intent)
 	 */
+	@SuppressLint("NewApi")
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		long ts = System.currentTimeMillis();
@@ -66,7 +64,7 @@ public class SystemStateListener extends BroadcastReceiver {
 			Intent sintent = new Intent(context, CollectorService.class);
 			sintent.setAction(Constants.ACTION_COLLECT);
 			sintent.putExtra(Constants.INTENT_EXTRA_RELEASE_WL, true); // request service to release the wl
-			context.startService(sintent);
+			context.startService(sintent);			
 		}
 	}
 }

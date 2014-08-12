@@ -21,16 +21,16 @@ package fr.inria.ucn.collectors;
 import android.content.Context;
 
 /**
- * Abstract collector base class for metrics that we sample periodically.
+ * Collector interface for metrics that we sample periodically.
  * 
  * @author Anna-Kaisa Pietilainen <anna-kaisa.pietilainen@inria.fr>
  *
  */
-public abstract class Collector {
+public interface Collector {
 
 	/**
 	 * Run this collector. Returns results via a broadcast.
 	 */
-	public abstract void run(Context c, long ts);
+	public void run(Context c, long ts);
 
 }

@@ -79,20 +79,23 @@ public class MyPhoneStateListener extends PhoneStateListener {
 	public void onCellLocationChanged(CellLocation location) {
 		if (location != null) {
 			try {
-				JSONObject data = new JSONObject();
+				JSONObject loc = new JSONObject();
 				if (location instanceof GsmCellLocation) {
+					JSONObject data = new JSONObject();
 					data.put("cid", ((GsmCellLocation)location).getCid());
 					data.put("lac", ((GsmCellLocation)location).getLac());
 					data.put("psc", ((GsmCellLocation)location).getPsc());
-					Helpers.sendResultObj(this.c,"gsm_cell_location",System.currentTimeMillis(),data);					
+					loc.put("gsm", data);
 				} else if (location instanceof CdmaCellLocation) {
+					JSONObject data = new JSONObject();
 					data.put("bs_id", ((CdmaCellLocation)location).getBaseStationId());
 					data.put("bs_lat", ((CdmaCellLocation)location).getBaseStationLatitude());
 					data.put("bs_lon", ((CdmaCellLocation)location).getBaseStationLongitude());
 					data.put("net_id", ((CdmaCellLocation)location).getNetworkId());
 					data.put("sys_id", ((CdmaCellLocation)location).getSystemId());
-					Helpers.sendResultObj(this.c,"cdma_cell_location",System.currentTimeMillis(),data);					
+					loc.put("cdma", data);
 				}
+				Helpers.sendResultObj(this.c,"cell_location",System.currentTimeMillis(),loc);					
 			} catch (JSONException jex) {
 				Log.w(Constants.LOGTAG, "failed to create json object",jex);
 			}

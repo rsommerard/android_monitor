@@ -37,11 +37,8 @@ import android.util.Log;
  */
 public class Scheduler extends BroadcastReceiver {
 	
-	/** Default scheduling interval: 5min*/
+	/** Default scheduling interval: 5min */
 	public static final int DEFAULT_IV = 5;
-
-	/* default scheduling interval: 6h (in millis) */
-	private static final long DEFAULT_UPLOAD_IV = 6 * 60 * 60 * 1000;
 
 	/*
 	 * (non-Javadoc)
@@ -160,11 +157,11 @@ public class Scheduler extends BroadcastReceiver {
 		if (prefs.getBoolean(Constants.PREF_UPLOAD, true)) {
 			Intent intent2 = new Intent(Constants.ACTION_UPLOAD_ALARM);
 			PendingIntent pi2 = PendingIntent.getBroadcast(c, 0, intent2, PendingIntent.FLAG_CANCEL_CURRENT);
-			Log.d(Constants.LOGTAG,"next upload scheduled in " + DEFAULT_UPLOAD_IV/(1000*60*60) + " h");
+			Log.d(Constants.LOGTAG,"next upload scheduled in " + AlarmManager.INTERVAL_HALF_DAY/(1000*60*60) + " h");
 			am.setInexactRepeating(
-					AlarmManager.ELAPSED_REALTIME,    // TODO: don't wake up the device, should we ?
-						SystemClock.elapsedRealtime(), 
-						DEFAULT_UPLOAD_IV, 
+					AlarmManager.ELAPSED_REALTIME,
+						SystemClock.elapsedRealtime()+AlarmManager.INTERVAL_HALF_DAY, 
+						AlarmManager.INTERVAL_HALF_DAY, 
 						pi2);
 		}
 	}

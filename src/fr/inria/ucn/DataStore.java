@@ -149,6 +149,7 @@ public class DataStore {
 	 */
 	public void addData(String json) {
 		if (json!=null) {
+			json = json.replaceAll("'", "''");
 			String sql = "INSERT INTO data (json) VALUES ('"+json+"');";
 			database.execSQL(sql);		
 		}
@@ -167,7 +168,9 @@ public class DataStore {
 			q += " LIMIT " + limit;
 		Cursor c = database.rawQuery(q, null);
 		while (c.moveToNext()) {
-			res.put(c.getInt(0), c.getString(1));
+			String json = c.getString(1);
+			json = json.replaceAll("''", "'");
+			res.put(c.getInt(0), json);
 		}
 		c.close();
 		return res;

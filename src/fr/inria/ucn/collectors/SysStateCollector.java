@@ -32,6 +32,7 @@ import android.app.ActivityManager.MemoryInfo;
 import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
+import android.media.AudioManager;
 import android.os.BatteryManager;
 import android.os.PowerManager;
 import android.util.Log;
@@ -42,7 +43,7 @@ import android.util.Log;
  * @author Anna-Kaisa Pietilainen <anna-kaisa.pietilainen@inria.fr>
  *
  */
-public class SysStateCollector extends Collector {
+public class SysStateCollector implements Collector {
 
 	final static private String PROC_STAT_FILE = "/proc/stat";
 	final static private String PROC_UPTIME_FILE = "/proc/uptime";
@@ -58,7 +59,7 @@ public class SysStateCollector extends Collector {
 	public void run(Context c, long ts, boolean change) {
 		try {
 			JSONObject data = new JSONObject();
-			data.put("onchange", change); // this collection run was triggered by screen state change
+			data.put("on_screen_state_change", change); // this collection run was triggered by screen state change
 						
 			// general memory state
 			ActivityManager am = (ActivityManager) c.getSystemService(Context.ACTIVITY_SERVICE);
@@ -103,6 +104,9 @@ public class SysStateCollector extends Collector {
 			data.put("cpu", getCpuStat());
 			data.put("loadavg", getLoadStat());			
 			data.put("uptime", getUptimeStat());			
+
+			// audio state
+			data.put("audio", getAudioState(c));			
 			
 			// done
 			Helpers.sendResultObj(c,"system_state",ts,data);
@@ -189,5 +193,53 @@ public class SysStateCollector extends Collector {
 		} else {
 			return null;
 		}
+	}
+	
+	@SuppressWarnings("deprecation")
+	private JSONObject getAudioState(Context c) throws JSONException {
+		AudioManager am = (AudioManager)c.getSystemService(Context.AUDIO_SERVICE);
+		
+		JSONObject data = new JSONObject();
+		
+		data.put("is_bluetooth_a2dp_on", am.isBluetoothA2dpOn());
+		data.put("is_microphone_mute", am.isMicrophoneMute());
+		data.put("is_music_active", am.isMusicActive());
+		data.put("is_speaker_phone_on", am.isSpeakerphoneOn());
+		data.put("is_wired_headset_on", am.isWiredHeadsetOn());
+		
+		switch (am.getMode()) {
+		case AudioManager.MODE_IN_CALL:	
+			data.put("mode", "in_call");
+			break;
+		case AudioManager.MODE_IN_COMMUNICATION:
+			data.put("mode", "in_comm");
+			break;
+		case AudioManager.MODE_NORMAL:
+			data.put("mode", "normal");
+			break;
+		case AudioManager.MODE_RINGTONE:
+			data.put("mode", "ringtone");
+			break;
+		case AudioManager.MODE_INVALID:
+		default:	
+			data.put("mode", "invalid");
+			break;
+		}	
+
+		switch (am.getRingerMode()) {
+		case AudioManager.RINGER_MODE_VIBRATE:
+			data.put("ringer_mode", "vibrate");
+			break;
+		case AudioManager.RINGER_MODE_SILENT:
+			data.put("ringer_mode", "silent");
+			break;
+		case AudioManager.RINGER_MODE_NORMAL:
+			data.put("ringer_mode", "normal");
+			break;
+		default:	
+			data.put("ringer_mode", "invalid");
+			break;
+		}
+		return data;
 	}
 }

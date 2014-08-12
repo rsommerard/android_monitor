@@ -45,7 +45,7 @@ import android.util.Log;
  * @author Anna-Kaisa Pietilainen <anna-kaisa.pietilainen@inria.fr>
  *
  */
-public class LlamaCollector extends Collector {
+public class LlamaCollector implements Collector {
 	
 	/* (non-Javadoc)
 	 * @see fr.inria.ucn.collectors.Collector#run(android.content.Context, long)
