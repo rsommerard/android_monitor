@@ -356,6 +356,7 @@ public final class Helpers {
 					pkg.put("app_label",appLabel.toString());
 					res.put(pkg);
 				} catch (NameNotFoundException e) {
+				} catch (Exception e) {
 				}
 			}
 		}
