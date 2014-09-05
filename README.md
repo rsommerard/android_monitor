@@ -1,13 +1,12 @@
 UCN data collector for Android
 ==============================
 
-More info: http://usercentricnetworking.eu/
-
 JSON Data Formats
 -----------------
 
 Each data object has the following common fields:
 
+```
 {
   "data" : { ... },                                  // the collected data object
   "app_version_code" : 4,                            // data collector version code
@@ -16,19 +15,21 @@ Each data object has the following common fields:
   "hostname" : "android-e2e3a3bc2b0eb41d",           // device hostname
   "uid" : "d9ffb08c-3e6b-3767-8602-3a5b27ad66ef",    // unique device identifier
   "ts_event" : 1398175708736,                        // measurement event timestamp
-  "ts_utc" : 1398175709974,                          // data timestamp UTC
-  "ts_local" : 1398175709000,                        // data timestamp host timezone
+  "ts_utc" : 1398175709974,                          // data record timestamp UTC
+  "ts_local" : 1398175709000,                        // data record timestamp host timezone
   "tz" : "Europe/London",                            // host timezone
   "collection" : "app_data_usage",                   // data collection name
   "upload" : {                                       // server metadata
-  	  "server_ts" : 1405220072672,
-	  "req_ip" : "82.26.241.172",
+  	  "server_ts" : 1405220072672,               // upload time
+	  "req_ip" : "82.26.241.172",                // uploading cli IP
 	  "req_path" : "/ucntest"
   },
   "_id" : ObjectId("53c1f4e8c0f821c31d51401c")       // mongo object id
 }
+```
 
 * app_data_usage [AppDataUsageCollector.java]:
+```
 {
    "process_list" : [
         {
@@ -61,15 +62,19 @@ Each data object has the following common fields:
 	....
   ] // end process_list
 }
+```
 
 * data_conn_state [MyPhoneStateListener.java]:
+```
 {
 	"network_type_str" : "HSPA",
 	"network_type" : 10,
 	"state" : 0
 }
+```
 
 * device_info [DeviceInfoCollector.java]:
+```
 {
 	"build" : {
 		"product" : "nakasi",
@@ -90,8 +95,10 @@ Each data object has the following common fields:
 		"dpi" : 213
 	}
 }
+```
 
 * cell_location [MyPhoneStateListener]:
+```
 {
 	"gsm" : {
 		"cid" : 2252878,
@@ -99,8 +106,10 @@ Each data object has the following common fields:
 		"psc" : 383
 	}
 }
+```
 
 * network_state [NetworkStateCollector.java]:
+```
 {
 	"is_airplane_mode" : false,
 	"wifi_network" : {
@@ -190,10 +199,11 @@ Each data object has the following common fields:
 	],
 	"is_connected" : true,
 	"on_network_state_change" : false
-},
-
+}
+```
 
 * running_apps [RunningAppsCollector.java]:
+```
 {
 	"runningAppProcesses" : [
 		{
@@ -221,8 +231,10 @@ Each data object has the following common fields:
 		...
 	]		
 }
+```
 
 * system_state [SysStateCollector.java]:
+```
 {
 	"uptime" : {
 		"uptime" : 264538.15625,
@@ -256,8 +268,10 @@ Each data object has the following common fields:
 		"ac_charge" : false
 	}
 }
+```
 
 * user_location [LlamaCollector.java]:
+```
 {
 	"locations" : [
 		{
@@ -279,8 +293,10 @@ Each data object has the following common fields:
 	"source_file" : "/storage/emulated/0/Llama/Llama_Areas.txt",
 	"provider" : "Llama"
 }
+```
 
 * vpn_status [OpenVPNStatusCollector.java]:
+```
 {
 	"message" : "SUCCESS,10.1.0.10,132.227.126.1",
 	"state" : "CONNECTED",
@@ -292,3 +308,4 @@ Each data object has the following common fields:
 		"remote_ip" : "132.227.126.1"
 	}
 }
+```
