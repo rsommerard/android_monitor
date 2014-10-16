@@ -72,29 +72,26 @@ public interface Constants {
 	/** CPU wake-lock identifier. */
 	public static final String CPU_WAKE_LOCK = "fr.inria.ucn.collector.wakelock";
 	
-    /** User label for the device. */
-    public static final String PREF_LABEL = "pref_label";
     /** Periodic collection interval. */
     public static final String PREF_INTERVAL = "pref_interval";
     /** Periodic collection night pause start. */
     public static final String PREF_NIGHT_START = "pref_start_hour";
     /** Periodic collection night pause stop. */
     public static final String PREF_NIGHT_STOP = "pref_stop_hour";
-    /** Data upload enabled. */
-    public static final String PREF_UPLOAD = "pref_upload";
-    /** Data upload url. */
-    public static final String PREF_UPLOAD_URL = "pref_upload_url";
+    /** Country. */
+    public static final String PREF_COUNTRY = "pref_country";
     /** Data upload enabled. */
     public static final String PREF_UPLOAD_WIFI = "pref_upload_wifi";
-    /** Data upload write log file. */
-    public static final String PREF_WRITE = "pref_write";
-    /** Data upload log file name. */
-    public static final String PREF_WRITE_FILE = "pref_write_file";	
-    /** VPN tunnel configuration in use. */
-    public static final String PREF_VPN_PROFILE = "pref_vpn_profile";
-    /** VPN category key. */
-    public static final String PREF_VPN = "pref_vpn";
-
-    /* Hidden prefs to store some static info */
+    /** Url. */
+    public static final String PREF_WEB = "pref_web";
+    /** Hidden prefs to store some static info */
     public static final String PREF_HIDDEN_FIRST = "pref_hidden_first";
-}
+    
+    /** URLs for FR. */
+    public static final String UPLOAD_URL_FR = "https://cmon.lip6.fr/upload/";
+    public static final String HOMEPAGE_URL_FR = "https://cmon.lip6.fr/ucn/";
+    
+    /** URLs for UK. */
+    public static final String UPLOAD_URL_UK = "https://horizab4.memset.net/upload/";
+    public static final String HOMEPAGE_URL_UK = "https://horizab4.memset.net/ucn/";
+}	

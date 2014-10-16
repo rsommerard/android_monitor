@@ -37,8 +37,8 @@ import android.util.Log;
  */
 public class Scheduler extends BroadcastReceiver {
 	
-	/** Default scheduling interval: 5min */
-	public static final int DEFAULT_IV = 5;
+	/** Default scheduling interval: 3min */
+	public static final int DEFAULT_IV = 3;
 
 	/*
 	 * (non-Javadoc)
@@ -152,18 +152,14 @@ public class Scheduler extends BroadcastReceiver {
 		        interval, 
 		        pi);
 		
-		// Check and enable automatic uploads based on user preference
-		SharedPreferences prefs = Helpers.getUserSettings(c);
-		if (prefs.getBoolean(Constants.PREF_UPLOAD, true)) {
-			Intent intent2 = new Intent(Constants.ACTION_UPLOAD_ALARM);
-			PendingIntent pi2 = PendingIntent.getBroadcast(c, 0, intent2, PendingIntent.FLAG_CANCEL_CURRENT);
-			Log.d(Constants.LOGTAG,"next upload scheduled in " + AlarmManager.INTERVAL_HALF_DAY/(1000*60*60) + " h");
-			am.setInexactRepeating(
-					AlarmManager.ELAPSED_REALTIME,
-						SystemClock.elapsedRealtime()+AlarmManager.INTERVAL_HALF_DAY, 
-						AlarmManager.INTERVAL_HALF_DAY, 
-						pi2);
-		}
+		Intent intent2 = new Intent(Constants.ACTION_UPLOAD_ALARM);
+		PendingIntent pi2 = PendingIntent.getBroadcast(c, 0, intent2, PendingIntent.FLAG_CANCEL_CURRENT);
+		Log.d(Constants.LOGTAG,"next upload scheduled in " + AlarmManager.INTERVAL_HALF_DAY/(1000*60*60) + " h");
+		am.setInexactRepeating(
+				AlarmManager.ELAPSED_REALTIME,
+					SystemClock.elapsedRealtime()+AlarmManager.INTERVAL_HALF_DAY, 
+					AlarmManager.INTERVAL_HALF_DAY, 
+					pi2);
 	}
 
 	/**

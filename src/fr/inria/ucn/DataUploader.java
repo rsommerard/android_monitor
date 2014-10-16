@@ -20,11 +20,8 @@ package fr.inria.ucn;
 
 import java.io.BufferedReader;
 import java.io.DataOutputStream;
-import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -39,7 +36,6 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.Environment;
 import android.util.Log;
 
 /**
@@ -47,9 +43,6 @@ import android.util.Log;
  *
  */
 public final class DataUploader {
-
-	public static final String DEFAULT_URL = "https://cmon.lip6.fr/upload";
-	public static final String DEFAULT_FILE = Environment.getExternalStorageDirectory().getPath()+"/ucndata.log";
 
 	private static final String LF = "\r\n";
 	private static final String TH = "--";
@@ -66,72 +59,49 @@ public final class DataUploader {
 	 * @return
 	 */
 	public static boolean upload(Context c, DataStore ds) {
-		SharedPreferences prefs = Helpers.getUserSettings(c);				
-		boolean remote = prefs.getBoolean(Constants.PREF_UPLOAD, true);
+		// upload settings
+		SharedPreferences prefs = Helpers.getUserSettings(c);
 		boolean requireWifi = prefs.getBoolean(Constants.PREF_UPLOAD_WIFI, true);
-		boolean log = prefs.getBoolean(Constants.PREF_WRITE, true);
+		String country = prefs.getString(Constants.PREF_COUNTRY, null);
 		
-		if (!remote && !log) {
-			Log.w(Constants.LOGTAG, "uploader: both logging and upload disabled, doing nothing");
-			return true;
+		if (country == null) {
+			// no country ?
+			Log.w(Constants.LOGTAG, "uploader: got null country, can't upload");
+			return false;
 		}
 		
+		ConnectivityManager cm = (ConnectivityManager)c.getSystemService(Context.CONNECTIVITY_SERVICE);
+		NetworkInfo networkInfo = cm.getActiveNetworkInfo();
+		if (networkInfo == null || !networkInfo.isConnected()) {
+			// no network - do nothing
+			Log.w(Constants.LOGTAG, "uploader: no network connection, can't upload");
+			return false;
+		} else if (requireWifi && networkInfo.getType() != ConnectivityManager.TYPE_WIFI) {
+			// not a wifi network - do nothing
+			Log.w(Constants.LOGTAG, "uploader: not a wifi network connection, can't upload");
+			return false;
+		}
+		
+		String uploadto = (country.equalsIgnoreCase("FR")) ? Constants.UPLOAD_URL_FR : Constants.UPLOAD_URL_UK;
 		URL url = null;
-		File logfile = null;
-		
-		if (remote) {
-			// check if we have internet connection
-			ConnectivityManager cm = (ConnectivityManager)c.getSystemService(Context.CONNECTIVITY_SERVICE);
-			NetworkInfo networkInfo = cm.getActiveNetworkInfo();
-			if (networkInfo == null || !networkInfo.isConnected()) {
-				// no network - do nothing
-				Log.w(Constants.LOGTAG, "uploader: no network connection, can't upload");
-				return false;
-			} else if (requireWifi && networkInfo.getType() != ConnectivityManager.TYPE_WIFI) {
-				// not a wifi network - do nothing
-				Log.w(Constants.LOGTAG, "uploader: not a wifi network connection, can't upload");
-				return false;
+		try {
+			url = new URL(uploadto);
+			if (!Helpers.isCaCertInstalled(url.getHost())) {
+				Log.w(Constants.LOGTAG, "uploader: missing required certificate, going to upload in cleartext!!");
+				url = new URL(uploadto.replace("https://", "http://"));						
 			}
-			
-			try {
-				url = new URL(prefs.getString(Constants.PREF_UPLOAD_URL, DEFAULT_URL));
-				if (url.getProtocol().equals("https")) {
-					if (url.getHost().contains("cmon.lip6.fr") && 
-						!Helpers.isCaCertInstalled("cmon.lip6.fr")) 
-					{
-						Log.w(Constants.LOGTAG, "uploader: missing required certificate, going to upload in cleartext!!");
-						url = new URL(prefs.getString(Constants.PREF_UPLOAD_URL, DEFAULT_URL).replace("https://", "http://"));						
-					}
-				}
-			} catch (MalformedURLException e) {
-				Log.w(Constants.LOGTAG, "uploader: invalid upload url, can't upload",e);				
-				return false;
-			}
-			Log.d(Constants.LOGTAG, "uploader: upload data to " + url.toString());
+		} catch (MalformedURLException e) {
+			Log.w(Constants.LOGTAG, "uploader: invalid upload url "+uploadto+", can't upload",e);				
+			return false;
 		}
-		
-		if (log) {
-	    	String fn = prefs.getString(Constants.PREF_WRITE_FILE, DEFAULT_FILE);
-	    	logfile = new File(fn);
-	    	
-	    	Log.d(Constants.LOGTAG, "uploader: write logfile " + fn);
-	    	String state = Environment.getExternalStorageState();
-	       	if (!fn.startsWith(Environment.getExternalStorageDirectory().toString()) || Environment.MEDIA_MOUNTED.equals(state)) {
-		    	// remove previous log file, just keep a file per upload round for debugging
-		    	if (logfile.exists())
-		    		logfile.delete();
-		    } else {
-		    	Log.w(Constants.LOGTAG, "uploader: logfile " + fn + " is not available for writing, won't log");
-		    	logfile = null; // just ignore for now
-		    }
-		}
+		Log.d(Constants.LOGTAG, "uploader: upload data to " + uploadto);
 		
 		// perform uploads in batch
 		boolean res = false;
 		int count = 0;
 		while (true) {
 			Map<Integer,String> data = ds.getData(UPLOAD_BATCH);
-			List<Integer> uploaded = uploadBatch(data, url, logfile);
+			List<Integer> uploaded = uploadBatch(data, url);
 
 			if (uploaded == null) {
 				res = false; // something went wrong, stop here
@@ -157,16 +127,15 @@ public final class DataUploader {
 	/*
 	 * Process upload batch. Returns list of uploaded items (can be empty) or null in case of failure.
 	 */
-	private static List<Integer> uploadBatch(Map<Integer,String> data, URL url, File logfile) {
+	private static List<Integer> uploadBatch(Map<Integer,String> data, URL url) {
 		List<Integer> uploaded = new ArrayList<Integer>();
 		if (data==null || data.size()==0) {
 			return uploaded; // all done!
 		}
 		
-		if (url==null && logfile==null) // should not happen
+		if (url==null) // should not happen
 			return null;
 		
-		OutputStreamWriter logout = null;
 		HttpURLConnection conn = null;
 		DataOutputStream remoteout = null;
 		BufferedReader remotein = null;
@@ -186,17 +155,8 @@ public final class DataUploader {
 				
 				remoteout = new DataOutputStream(conn.getOutputStream());	
 			}
-			
-			if (logfile!=null) {
-				logout = new OutputStreamWriter(new FileOutputStream(logfile, true));
-			}
 
-			for (Entry<Integer,String> e : data.entrySet()) {
-				if (logout!=null) {
-					logout.write(e.getValue());
-					logout.write(LF+LF);
-				}
-				
+			for (Entry<Integer,String> e : data.entrySet()) {				
 				if (conn!=null) {
 					remoteout.writeBytes(TH + BOUNDARY + LF);
 					remoteout.writeBytes("Content-Disposition: form-data; name=\"json\";filename=\"" + e.getKey().toString() +"\"" + LF);
@@ -233,16 +193,6 @@ public final class DataUploader {
 			Log.w(Constants.LOGTAG, "datauploader failed", e);
 			uploaded = null; // something went wrong, ignore this upload
 		} finally {
-			// cleanup code
-			if (logout!=null) {
-				try {
-					logout.flush();
-					logout.close();
-				} catch (IOException e) {
-				}
-				logout = null;
-			}
-
 			if (remoteout!=null) {
 				try {
 					remoteout.flush();

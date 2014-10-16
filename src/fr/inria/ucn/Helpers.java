@@ -184,12 +184,8 @@ public final class Helpers {
 			
 			// store unique user id to each result object
 			res.put("uid", getDeviceUuid(c));
-
-			// some labels to help filtering test devices away from data
-			res.put("hostname", getSystemProperty("net.hostname", 
-					c.getResources().getString(R.string.pref_label_default)));
-			res.put("userlabel", getUserSettings(c).getString(Constants.PREF_LABEL, 
-					c.getResources().getString(R.string.pref_label_default)));
+			
+			res.put("hostname", getSystemProperty("net.hostname","unknown hostname"));
 			
 			// this app version to identify data format changes
 			try {

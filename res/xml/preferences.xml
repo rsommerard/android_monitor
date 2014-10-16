@@ -1,76 +1,53 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
-	<PreferenceCategory 
-        android:title="@string/pref_sampling_title"
-        android:key="pref_sampling">    
-    	<ListPreference
-	        android:key="pref_interval"
-	        android:title="@string/pref_interval"
-	        android:dialogTitle="@string/pref_interval"
-	        android:entries="@array/pref_interval_entries"
-	        android:entryValues="@array/pref_interval_entries"
-	        android:defaultValue="5" /> <!-- 5 minutes -->
-    	<fr.inria.ucn.ui.TimePreference
-	        android:key="pref_start_hour"
-	        android:title="@string/pref_start_hour"
-	        android:summary="23:00"
-	        android:defaultValue="82800" /> <!-- 23:00 as seconds since epoch -->
-    	<fr.inria.ucn.ui.TimePreference
-	        android:key="pref_end_hour"
-	        android:title="@string/pref_end_hour"
-	        android:summary="06:00"
-	        android:defaultValue="21600" /> <!-- 06:00 as seconds since epoch -->
-       	</PreferenceCategory>	
-	<PreferenceCategory 
-        android:title="@string/pref_log_title"
-        android:key="pref_log">  
-		<EditTextPreference
-	        android:key="pref_label"
-	        android:title="@string/pref_label"
-	        android:summary="@string/pref_label_default"
-	        android:defaultValue="@string/pref_label_default" />
-	    <CheckBoxPreference
-	        android:key="pref_write"
-	        android:title="@string/pref_write"
-	        android:summary="@string/pref_write_sum"
-	        android:defaultValue="true" />
-		<EditTextPreference
-		    android:dependency="pref_write"
-	        android:key="pref_write_file"
-	        android:title="@string/pref_write_file" />		    
-	    <CheckBoxPreference
-	        android:key="pref_upload"
-	        android:title="@string/pref_upload"
-	        android:summary="@string/pref_upload_sum"
-	        android:defaultValue="true" />
-	    <CheckBoxPreference
-		    android:dependency="pref_upload"
-	        android:key="pref_upload_wifi"
-	        android:title="@string/pref_upload_wifi"
-	        android:summary="@string/pref_upload_wifi_sum"
-	        android:defaultValue="true" />	    
-		<EditTextPreference
-		    android:dependency="pref_upload"
-	        android:key="pref_upload_url"
-	        android:title="@string/pref_upload_url" />		    
-	    </PreferenceCategory>
-    	<PreferenceCategory 
-    	    android:title="@string/pref_vpn_title"
-	    	android:key="pref_vpn">  
-    		<ListPreference
-			    android:dependency="pref_vpn"
-		        android:key="pref_vpn_profile"
-		        android:title="@string/pref_vpn_profile"
-		        android:dialogTitle="@string/pref_vpn_profile" />
-			<Preference
-			    android:dependency="pref_vpn"
-			    android:key="pref_vpn_app"
-			    android:title="@string/pref_vpn_app" >
-    			<intent 
-    			    android:action="android.intent.action.MAIN"
-    			    android:category="android.intent.category.LAUNCHER"
-            		android:targetPackage="de.blinkt.openvpn"
-            		android:targetClass="de.blinkt.openvpn.activities.MainActivity" />
-			</Preference>
-		</PreferenceCategory>
+
+ 	<ListPreference
+	        android:key="pref_country"
+	        android:title="@string/pref_country"
+	        android:dialogTitle="@string/pref_country"
+	        android:entries="@array/pref_country_entries"
+	        android:entryValues="@array/pref_country_entries" />
+    
+    <fr.inria.ucn.ui.TimePreference
+        android:defaultValue="82800"
+        android:key="pref_start_hour"
+        android:summary="23:00"
+        android:title="@string/pref_start_hour" />
+    
+ 	<fr.inria.ucn.ui.TimePreference
+        android:defaultValue="21600"
+        android:key="pref_end_hour"
+        android:summary="06:00"
+        android:title="@string/pref_end_hour" />
+ 	
+ 	<CheckBoxPreference
+        android:defaultValue="true"
+        android:key="pref_upload_wifi"
+        android:summary="@string/pref_upload_wifi_sum"
+        android:title="@string/pref_upload_wifi" />
+ 	
+ 	<!-- Sub-screen for advanced settings -->
+ 	<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android" 
+        android:key="button_advanced_key"
+        android:title="@string/pref_advanced"
+        android:persistent="false">
+        
+        <ListPreference
+            android:defaultValue="3"
+            android:dialogTitle="@string/pref_interval"
+            android:entries="@array/pref_interval_entries"
+            android:entryValues="@array/pref_interval_entries"
+            android:key="pref_interval"
+            android:title="@string/pref_interval" />
+        
+    </PreferenceScreen>
+    
+	<Preference
+        android:key="pref_web"
+        android:title="@string/pref_web" >
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="https://cmon.lip6.fr/ucn/" />
+    </Preference>
+
 </PreferenceScreen>

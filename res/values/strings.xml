@@ -1,43 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
-
-    <string name="openvpn_permission_description">Allows this app to control OpenVPN</string>
-    
+<resources>    
     <!-- Main screen and menus -->
     <string name="app_name">UCNDataCollector</string>
-    <string name="action_settings">Settings</string>
-    <string name="hello_world">Hello world!</string>
-    <string name="uptime">Uptime ([HH:]MM:SS)</string>
-    <string name="upload">Last upload</string>
-    <string name="action_about">About</string>
-    <string name="action_upload">Upload now</string>
-    <string name="action_sample">Sample now</string>
-    <string name="stopped">stopped</string>
-    <string name="never">never</string>
-
-    <string name="toggle_data">Data collection</string>
-    <string name="toggle_vpn">VPN connection</string>
-    <string name="toggle_vpn_b">VPN</string>
     
-    <string name="title_activity_about">About UCNDataCollector</string>
-    <string name="title_activity_settings">UCNDataCollector Settings</string>
-
-    <string name="dialog_openvpn_install_msg">Seems like you have not installed OpenVPN for Android. Do you want to install it now?</string>
-    <string name="dialog_openvpn_install_yes">Install</string>
-    <string name="dialog_openvpn_install_no">Later</string>
+    <string name="openvpn_permission_description">Allows this application to query the OpenVPN tunnel status.</string>
     
-    <!-- Settings screen -->
-    
-    <string name="pref_sampling_title">Data collection</string>
-    <string name="pref_start_hour">Pause collection at</string>
-    <string name="pref_end_hour">Re-start collection at</string>
+    <!-- Main settings screen -->
+    <string name="pref_country">Country of residence</string>
+    <string-array name="pref_country_entries">
+        <item>UK</item>
+        <item>FR</item>
+    </string-array>
+    <string name="pref_start_hour">Pause collector at</string>
+    <string name="pref_end_hour">Re-start collector at</string>
     <string name="pref_hour_set">Set</string>
     <string name="pref_hour_cancel">Cancel</string>
-    
+    <string name="pref_upload_wifi">Upload only on WiFi</string>
+    <string name="pref_upload_wifi_sum">Upload collected data only when connected to a WiFi network</string>
+	<string name="pref_advanced">Advanced settings</string>
+    <string name="pref_web">Go to homepage</string>
+	
+    <!-- Advanced settings screen -->
     <string name="pref_interval">Sampling interval (minutes)</string>
     <string-array name="pref_interval_entries">
-        <item>1</item>
-        <item>2</item>
         <item>3</item>
         <item>4</item>
         <item>5</item>
@@ -46,23 +31,6 @@
         <item>8</item>
         <item>9</item>
         <item>10</item>
-        <item>15</item>
     </string-array>
-
-    <string name="pref_log_title">Data uploads</string>
-    <string name="pref_label">Device tag for data</string>
-    <string name="pref_label_default">unknown</string>
-    <string name="pref_write">Write to file</string>
-    <string name="pref_write_sum">Store last upload in a log file (for debugging)</string>
-    <string name="pref_write_file">Log file name</string>
-    <string name="pref_upload">Automatic uploads</string>
-    <string name="pref_upload_sum">Upload collected data automatically to the data collection server</string>
-    <string name="pref_upload_url">Data collection server URL</string>
-    <string name="pref_upload_wifi">Only on WiFi</string>
-    <string name="pref_upload_wifi_sum">Upload collected data only when connected on a WiFi network</string>
     
-    <string name="pref_vpn_title">VPN</string>
-    <string name="pref_vpn_profile">Profile</string>
-    <string name="pref_vpn_profile_default">not set</string>
-    <string name="pref_vpn_app">Configure OpenVPN</string>
 </resources>
