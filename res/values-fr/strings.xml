@@ -4,11 +4,10 @@
     <string name="app_name">UCNDataCollector</string>
     
     <!-- Main settings screen -->
-    <string name="pref_country">Country of residence</string>
+    <string name="pref_country">Pays</string>
     <string-array name="pref_country_entries">
-        <item>UK</item>
         <item>FR</item>
-        <item>test</item>
+        <item>UK</item>
     </string-array>
     <string name="pref_stop_night">Pause collector at night</string>
     <string name="pref_stop_night_sum">Do not run during night hours (see below). Saves battery.</string>

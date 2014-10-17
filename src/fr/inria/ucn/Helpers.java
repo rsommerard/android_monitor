@@ -29,15 +29,19 @@ import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.TimeZone;
 import java.util.UUID;
 
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import android.annotation.SuppressLint;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -51,7 +55,6 @@ import android.os.Build;
 import android.os.PowerManager;
 import android.provider.Settings.Secure;
 import android.telephony.TelephonyManager;
-import android.text.format.Time;
 import android.util.Log;
 
 /**
@@ -117,11 +120,6 @@ public final class Helpers {
 			wifilock.release();
 		releaseLock();
 	}
-	
-    /** Retrieve default preferences object. */
-    public static SharedPreferences getSharedPreferences(Context c) {
-    	return c.getSharedPreferences(Constants.PREFS, Context.MODE_PRIVATE);
-    }
     
     /**
      * Retrieves a system property
@@ -173,6 +171,7 @@ public final class Helpers {
 	 * @param ts  periodic collection timestamp or event time if triggered by timestamp
 	 * @param data 
 	 */
+	@SuppressLint("SimpleDateFormat")
 	public static void sendResultObj(Context c, String cid, long ts, JSONObject data) {
 	    try {
 	    	
@@ -185,9 +184,7 @@ public final class Helpers {
 			// store unique user id to each result object
 			res.put("uid", getDeviceUuid(c));
 			
-			res.put("hostname", getSystemProperty("net.hostname","unknown hostname"));
-			
-			// this app version to identify data format changes
+			// app version to help to detect data format changes
 			try {
 				PackageManager manager = c.getPackageManager();
 				PackageInfo info = manager.getPackageInfo(c.getPackageName(), 0);
@@ -196,17 +193,13 @@ public final class Helpers {
 			} catch (NameNotFoundException e) {
 			}
 			
-			// event (alarm or listener) timestamp
-			res.put("ts_event", ts);
-
-			// current time in UTC and local time
-			res.put("ts_utc", System.currentTimeMillis());
+			// event and current time in UTC JSON date format
+			SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.S'Z'");
+			sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
+			res.put("ts_event", sdf.format(new Date(ts)));
+			res.put("ts", sdf.format(new Date()));
 			
-			Time today = new Time(Time.getCurrentTimezone());
-			today.setToNow();
-			res.put("ts_local", today.toMillis(false));
-			res.put("tz", Time.getCurrentTimezone());
-			
+			// the data obj
 			res.put("data", data);
 			
 			// ask the service to handle the data
@@ -448,6 +441,38 @@ public final class Helpers {
 			}
         return lines;
 	}
+    
+    /**
+     * Request data collection sample.
+     *  
+     * @param context
+     * @param wl         Need wakelock?
+     */
+    public static void doSample(Context context, boolean wl) {
+    	if (wl)
+			Helpers.acquireLock(context);
+		Intent sintent = new Intent(context, CollectorService.class);
+		sintent.setAction(Constants.ACTION_COLLECT);
+		if (wl)
+			sintent.putExtra(Constants.INTENT_EXTRA_RELEASE_WL, true); // request service to release the wl
+		context.startService(sintent);
+    }
+    
+    /**
+     * Request data upload.
+     *  
+     * @param context
+     * @param wl         Need wakelock?
+     */
+    public static void doUpload(Context context, boolean wl) {
+    	if (wl)
+			Helpers.acquireLock(context);
+		Intent sintent = new Intent(context, CollectorService.class);
+		sintent.setAction(Constants.ACTION_UPLOAD);
+		if (wl)
+			sintent.putExtra(Constants.INTENT_EXTRA_RELEASE_WL, true); // request service to release the wl
+		context.startService(sintent);
+    }
     
     /**
      * Start (schedule) the data collector service.

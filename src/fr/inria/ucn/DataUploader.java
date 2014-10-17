@@ -36,6 +36,7 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 /**
@@ -60,7 +61,7 @@ public final class DataUploader {
 	 */
 	public static boolean upload(Context c, DataStore ds) {
 		// upload settings
-		SharedPreferences prefs = Helpers.getSharedPreferences(c);
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(c);
 		boolean requireWifi = prefs.getBoolean(Constants.PREF_UPLOAD_WIFI, true);
 		String country = prefs.getString(Constants.PREF_COUNTRY, null);
 		
@@ -86,7 +87,7 @@ public final class DataUploader {
 		URL url = null;
 		try {
 			url = new URL(uploadto);
-			if (!Helpers.isCaCertInstalled(url.getHost())) {
+			if (url.getProtocol().equals("https") && !Helpers.isCaCertInstalled(url.getHost())) {
 				Log.w(Constants.LOGTAG, "uploader: missing required certificate, going to upload in cleartext!! " + url.getHost());
 				url = new URL(uploadto.replace("https://", "http://"));						
 			}
@@ -94,6 +95,7 @@ public final class DataUploader {
 			Log.w(Constants.LOGTAG, "uploader: invalid upload url "+uploadto+", can't upload",e);				
 			return false;
 		}
+		
 		Log.d(Constants.LOGTAG, "uploader: upload data to " + uploadto);
 		
 		// perform uploads in batch

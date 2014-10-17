@@ -58,7 +58,6 @@ public class LlamaCollector implements Collector {
 			
 			if (Environment.MEDIA_MOUNTED.equals(state) && llamaAreas.exists()) {
 				JSONObject data = new JSONObject();
-				data.put("provider","Llama");
 				data.put("source_file",llamaAreas.toString());			
 
 				BufferedReader in = null;
@@ -91,7 +90,7 @@ public class LlamaCollector implements Collector {
 					data.put("locations", a);
 					
 					// done
-					Helpers.sendResultObj(c,"user_location",ts,data);
+					Helpers.sendResultObj(c,"llama_location",ts,data);
 					
 				} catch (FileNotFoundException e) {
 					Log.w(Constants.LOGTAG, "Llama exports not available", e);

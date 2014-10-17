@@ -18,17 +18,25 @@
  ******************************************************************************/
 package fr.inria.ucn.ui;
 
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.net.URL;
 import java.util.TimeZone;
 
 import fr.inria.ucn.Constants;
+import fr.inria.ucn.Helpers;
 import fr.inria.ucn.R;
 import fr.inria.ucn.Scheduler;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
+import android.preference.PreferenceManager;
+import android.security.KeyChain;
+import android.util.Log;
 
 /**
  * @author Anna-Kaisa Pietilainen <anna-kaisa.pietilainen@inria.fr>
@@ -81,6 +89,17 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
 		pref.setSummary(Constants.WEBSITE_URLS.get(country));		
 		pref.getIntent().setData(Uri.parse(Constants.WEBSITE_URLS.get(country)));
 		
+		// handle upload clicks from 'Advanced Settings'
+		pref = findPreference("pref_upload");
+		if (pref!=null) {
+			pref.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+				@Override
+				public boolean onPreferenceClick(Preference preference) {
+					Helpers.doUpload(getActivity(), false);
+					return true;
+				}
+			});
+		}
     }
 	
 	/* (non-Javadoc)
@@ -97,19 +116,48 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
 	 * @see android.content.SharedPreferences.OnSharedPreferenceChangeListener#onSharedPreferenceChanged(android.content.SharedPreferences, java.lang.String)
 	 */
 	@Override
-	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
+	public void onSharedPreferenceChanged(SharedPreferences prefs, String key) {
 		Preference pref = findPreference(key);
 		if (key.equals(Constants.PREF_INTERVAL)) {
-			pref.setSummary(sharedPreferences.getString(key, ""));
+			pref.setSummary(prefs.getString(key, ""));
+			
 		} else if (key.equals(Constants.PREF_COUNTRY)) {
-			String country = sharedPreferences.getString(Constants.PREF_COUNTRY, "");
+			String country = prefs.getString(Constants.PREF_COUNTRY, "");
 			pref.setSummary(country);
 			
 			pref = findPreference(Constants.PREF_WEB);
 			pref.setSummary(Constants.WEBSITE_URLS.get(country));		
 			pref.getIntent().setData(Uri.parse(Constants.WEBSITE_URLS.get(country)));			
 			
-			// TODO: check the certificate and promt install if not avail
+			String uploadurl = Constants.UPLOAD_URLS.get(prefs.getString(Constants.PREF_COUNTRY, ""));
+			if (uploadurl!=null) {
+				BufferedInputStream bis = null;
+				try {
+					URL url = new URL(uploadurl);
+					if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.ICE_CREAM_SANDWICH &&
+							!Helpers.isCaCertInstalled(url.getHost()) && url.getProtocol().equals("https")) 
+					{					
+						// prompt user to install the self-signed ca certificate - for https uploads
+						Log.d(Constants.LOGTAG, "missing required ca certificate for " + url.getHost()); 
+						bis = new BufferedInputStream(getActivity().getAssets().open(url.getHost() + ".ca.pem"));
+						byte[] keychain = new byte[bis.available()];
+						bis.read(keychain);
+
+						Intent installIntent = KeyChain.createInstallIntent();
+						installIntent.putExtra(KeyChain.EXTRA_CERTIFICATE, keychain);
+						installIntent.putExtra(KeyChain.EXTRA_NAME, url.getHost());
+						startActivityForResult(installIntent, 1);		
+					}
+				} catch (IOException e) {
+					Log.e(Constants.LOGTAG, "failed to read certificate",e); 
+				} finally {
+					if (bis!=null)
+						try {
+							bis.close();
+						} catch (IOException e) {
+						}
+				}
+			}
 		}
 	}
 }

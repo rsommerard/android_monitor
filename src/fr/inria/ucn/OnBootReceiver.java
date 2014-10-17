@@ -22,6 +22,7 @@ import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.preference.PreferenceManager;
 
 /**
  * @author Anna-Kaisa Pietilainen <anna-kaisa.pietilainen@inria.fr>
@@ -35,7 +36,7 @@ public class OnBootReceiver extends BroadcastReceiver {
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		if (intent.getAction().equals("android.intent.action.BOOT_COMPLETED")) {
-			SharedPreferences prefs = Helpers.getSharedPreferences(context);
+			SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
 			if (prefs.getBoolean(Constants.PREF_HIDDEN_ENABLED, false)) {
 				Helpers.startCollector(context, true);
 			}

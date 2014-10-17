@@ -270,7 +270,7 @@ Each data object has the following common fields:
 }
 ```
 
-* user_location [LlamaCollector.java]:
+* llama_location [LlamaCollector.java]:
 ```
 {
 	"locations" : [
@@ -292,20 +292,5 @@ Each data object has the following common fields:
 	],
 	"source_file" : "/storage/emulated/0/Llama/Llama_Areas.txt",
 	"provider" : "Llama"
-}
-```
-
-* vpn_status [OpenVPNStatusCollector.java]:
-```
-{
-	"message" : "SUCCESS,10.1.0.10,132.227.126.1",
-	"state" : "CONNECTED",
-	"provider" : "OpenVPN",
-	"level" : "LEVEL_CONNECTED",
-	"uuid" : "43f0a8db-094b-4268-bb06-1d0050e31b00",
-	"tunnel" : {
-		"local_ip" : "10.1.0.10",
-		"remote_ip" : "132.227.126.1"
-	}
 }
 ```

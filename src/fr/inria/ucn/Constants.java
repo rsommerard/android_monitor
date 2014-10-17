@@ -75,9 +75,6 @@ public interface Constants {
 	/** CPU wake-lock identifier. */
 	public static final String CPU_WAKE_LOCK = "fr.inria.ucn.collector.wakelock";
 	
-	/** Shared prefs identifier. */
-	public static final String PREFS = "fr.inria.ucn.prefs";
-	
 	
     /** Periodic collection interval. */
     public static final String PREF_INTERVAL = "pref_interval";
@@ -102,13 +99,13 @@ public interface Constants {
 	public static final Map<String, String> UPLOAD_URLS = new HashMap<String,String>() {{
     	put("FR","https://cmon.lip6.fr/upload/");
     	put("UK","https://horizab4.memset.net/upload/");
-    	put("test","http://192.168.1.174:3003");
+    	put("test","http://192.168.1.174:3001");
     }};
     
     @SuppressWarnings("serial")
 	public static final Map<String, String> WEBSITE_URLS = new HashMap<String,String>() {{
     	put("FR","https://cmon.lip6.fr/ucn/");
     	put("UK","https://horizab4.memset.net/ucn/");
-    	put("test","http://192.168.1.174:3002");
+    	put("test","http://192.168.1.174:3002/ucn/");
     }};
 }	

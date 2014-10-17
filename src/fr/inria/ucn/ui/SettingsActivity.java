@@ -21,6 +21,7 @@ package fr.inria.ucn.ui;
 import fr.inria.ucn.Constants;
 import fr.inria.ucn.Helpers;
 import fr.inria.ucn.R;
+import fr.inria.ucn.Scheduler;
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -47,7 +48,7 @@ public class SettingsActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         
-        PreferenceManager.setDefaultValues(this, Constants.PREFS, MODE_PRIVATE, R.xml.preferences, false);
+        PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
                 
         // Display the fragment as the main content.
         getFragmentManager().beginTransaction()
@@ -66,11 +67,13 @@ public class SettingsActivity extends Activity {
 	    
 	    // On-Off toggle handler
 	    Switch s = (Switch)menu.findItem(R.id.onoffswitch).getActionView().findViewById(R.id.switchForActionBar);
+    	s.setChecked(Scheduler.isScheduled(getApplicationContext()));
+	    
 	    s.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
 			@Override
 			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 				// store the setting so that the on-boot receiver can restore the correct state
-				SharedPreferences prefs = Helpers.getSharedPreferences(getApplicationContext());
+				SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 				SharedPreferences.Editor edit = prefs.edit();
 				edit.putBoolean(Constants.PREF_HIDDEN_ENABLED, isChecked);
 				edit.commit();

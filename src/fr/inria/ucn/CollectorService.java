@@ -26,7 +26,6 @@ import fr.inria.ucn.collectors.Collector;
 import fr.inria.ucn.collectors.DeviceInfoCollector;
 import fr.inria.ucn.collectors.LlamaCollector;
 import fr.inria.ucn.collectors.NetworkStateCollector;
-import fr.inria.ucn.collectors.OpenVPNStatusCollector;
 import fr.inria.ucn.collectors.RunningAppsCollector;
 import fr.inria.ucn.collectors.SysStateCollector;
 import fr.inria.ucn.listeners.MyPhoneStateListener;
@@ -74,7 +73,6 @@ public class CollectorService extends IntentService {
 		periodicCollectors.add(new RunningAppsCollector());
 		periodicCollectors.add(new AppDataUsageCollector());
 		periodicCollectors.add(new LlamaCollector());
-		periodicCollectors.add(new OpenVPNStatusCollector());
 		
 		psl = new MyPhoneStateListener();
 	}
@@ -158,13 +156,6 @@ public class CollectorService extends IntentService {
 			Intent sintent = new Intent(this.getApplicationContext(), CollectorService.class);
 			sintent.setAction(Constants.ACTION_COLLECT);
 			startService(sintent);
-
-			if (!on) {
-				// turned off, queue upload action
-				Intent sintent2 = new Intent(this.getApplicationContext(), CollectorService.class);
-				sintent2.setAction(Constants.ACTION_UPLOAD);
-				startService(sintent2);
-			}
 			
 		} else if (intent.getAction().equals(Constants.ACTION_COLLECT)) {
 			for (Collector c : periodicCollectors) {

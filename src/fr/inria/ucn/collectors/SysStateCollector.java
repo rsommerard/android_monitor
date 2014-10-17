@@ -35,6 +35,7 @@ import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.os.BatteryManager;
 import android.os.PowerManager;
+import android.text.format.Time;
 import android.util.Log;
 
 /**
@@ -61,6 +62,9 @@ public class SysStateCollector implements Collector {
 			JSONObject data = new JSONObject();
 			data.put("on_screen_state_change", change); // this collection run was triggered by screen state change
 						
+			data.put("hostname", Helpers.getSystemProperty("net.hostname","unknown hostname"));
+			data.put("current_timezone", Time.getCurrentTimezone());
+			
 			// general memory state
 			ActivityManager am = (ActivityManager) c.getSystemService(Context.ACTIVITY_SERVICE);
 			MemoryInfo mi = new MemoryInfo();

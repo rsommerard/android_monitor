@@ -27,6 +27,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.SystemClock;
+import android.preference.PreferenceManager;
 import android.util.Log;
 
 /**
@@ -46,7 +47,7 @@ public class Scheduler extends BroadcastReceiver {
 	 */
 	@Override
 	public void onReceive(Context context, Intent intent) {
-		SharedPreferences prefs = Helpers.getSharedPreferences(context);		
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
 		if (intent.getAction().equals(Constants.ACTION_COLLECT_ALARM)) {
 			if (prefs.getBoolean(Constants.PREF_STOP_NIGHT, false)) {
 				// check if we enter night time
@@ -81,17 +82,8 @@ public class Scheduler extends BroadcastReceiver {
 					Log.d(Constants.LOGTAG,"wakeup alarm in " + ((nightstop.getTimeInMillis()-now.getTimeInMillis())/1000) + " s");
 				}
 			}
-			
 			// run measurements
-			
-			// get wake-lock to keep the CPU up
-			Helpers.acquireLock(context);
-				
-			// start the service to do the actual work
-			Intent sintent = new Intent(context, CollectorService.class);
-			sintent.setAction(Constants.ACTION_COLLECT);
-			sintent.putExtra(Constants.INTENT_EXTRA_RELEASE_WL, true); // request service to release the wl
-			context.startService(sintent);
+			Helpers.doSample(context, true);
 			
 		} else if (intent.getAction().equals(Constants.ACTION_SCHEDULE_ALARM)) {
 			// re-start the collector after night time (check user pref in case they changed it at nigth)
@@ -102,15 +94,7 @@ public class Scheduler extends BroadcastReceiver {
 		} else if (intent.getAction().equals(Constants.ACTION_UPLOAD_ALARM)) {
 			// scheduled upload
 			Log.d(Constants.LOGTAG,"data upload alarm went off");
-
-			// get wake-lock to keep the CPU up
-			Helpers.acquireLock(context);
-			
-			// start the service to do the actual work
-			Intent sintent = new Intent(context, CollectorService.class);
-			sintent.setAction(Constants.ACTION_UPLOAD);
-			sintent.putExtra(Constants.INTENT_EXTRA_RELEASE_WL, true); // request service to release the wl
-			context.startService(sintent);						
+			Helpers.doUpload(context, true);
 		}
 	}
 	
@@ -122,7 +106,7 @@ public class Scheduler extends BroadcastReceiver {
 		AlarmManager am = (AlarmManager)c.getSystemService(Context.ALARM_SERVICE);
 
 		// periodic collection
-		String iv = Helpers.getSharedPreferences(c).getString(Constants.PREF_INTERVAL, Integer.toString(DEFAULT_IV));
+		String iv = PreferenceManager.getDefaultSharedPreferences(c).getString(Constants.PREF_INTERVAL, Integer.toString(DEFAULT_IV));
 		long interval = Integer.parseInt(iv) * 60 * 1000; // min -> ms
 		Intent intent = new Intent(Constants.ACTION_COLLECT_ALARM);
 		PendingIntent pi = PendingIntent.getBroadcast(c, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
@@ -186,7 +170,24 @@ public class Scheduler extends BroadcastReceiver {
 		if (pi2!=null) {
 			am.cancel(pi2);
 		}
+		
+		// run one more upload few seconds later
+		Intent aintent = new Intent(Constants.ACTION_UPLOAD_ALARM);
+		PendingIntent pi3 = PendingIntent.getBroadcast(c, 0, aintent, PendingIntent.FLAG_ONE_SHOT);
+		am.set(AlarmManager.RTC_WAKEUP,System.currentTimeMillis()+30000,pi3);
+		
 		Log.d(Constants.LOGTAG,"alarms cancelled");
+	}
+	
+	/**
+	 * Test if the prediodic alarm is scheduled.
+	 * @param c
+	 * @return
+	 */
+	public static synchronized boolean isScheduled(Context c) {
+		Intent intent = new Intent(Constants.ACTION_COLLECT_ALARM);
+		PendingIntent pi = PendingIntent.getBroadcast(c, 0, intent, PendingIntent.FLAG_NO_CREATE);
+		return (pi!=null);
 	}
 	
 }

@@ -48,6 +48,11 @@
             android:key="pref_interval"
             android:title="@string/pref_interval" />
         
+		<Preference
+	        android:key="pref_upload"
+	        android:title="@string/pref_upload" >
+	    </Preference>
+        
     </PreferenceScreen>
     
 	<Preference
