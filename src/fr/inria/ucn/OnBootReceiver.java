@@ -21,7 +21,7 @@ package fr.inria.ucn;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.util.Log;
+import android.content.SharedPreferences;
 
 /**
  * @author Anna-Kaisa Pietilainen <anna-kaisa.pietilainen@inria.fr>
@@ -35,17 +35,10 @@ public class OnBootReceiver extends BroadcastReceiver {
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		if (intent.getAction().equals("android.intent.action.BOOT_COMPLETED")) {
-			Log.d(Constants.LOGTAG, "received android.intent.action.BOOT_COMPLETED - re-schedule service");
-
-			// get wake-lock to keep the CPU up
-			Helpers.acquireLock(context);
-			
-			// start the service to do the actual work
-			Intent sintent = new Intent(context, CollectorService.class);
-			sintent.setAction(Constants.ACTION_SCHEDULE);
-			sintent.putExtra(Constants.INTENT_EXTRA_SCHEDULER_START, true);
-			sintent.putExtra(Constants.INTENT_EXTRA_RELEASE_WL, true); // request service to release the wl
-			context.startService(sintent);
+			SharedPreferences prefs = Helpers.getSharedPreferences(context);
+			if (prefs.getBoolean(Constants.PREF_HIDDEN_ENABLED, false)) {
+				Helpers.startCollector(context, true);
+			}
 		}
 	}
 }

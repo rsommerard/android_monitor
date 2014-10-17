@@ -46,77 +46,59 @@ public class Scheduler extends BroadcastReceiver {
 	 */
 	@Override
 	public void onReceive(Context context, Intent intent) {
+		SharedPreferences prefs = Helpers.getSharedPreferences(context);		
 		if (intent.getAction().equals(Constants.ACTION_COLLECT_ALARM)) {
-			// check if night started
-			SharedPreferences prefs = Helpers.getUserSettings(context);
-			Calendar now = Calendar.getInstance();
+			if (prefs.getBoolean(Constants.PREF_STOP_NIGHT, false)) {
+				// check if we enter night time
+				Calendar now = Calendar.getInstance();
 
-			Calendar nightstart = Calendar.getInstance();
-			nightstart.roll(Calendar.HOUR_OF_DAY, -1*nightstart.get(Calendar.HOUR_OF_DAY));
-			nightstart.roll(Calendar.MINUTE, -1*nightstart.get(Calendar.MINUTE));
-			nightstart.roll(Calendar.SECOND, -1*nightstart.get(Calendar.SECOND));
-			nightstart.roll(Calendar.MILLISECOND, -1*nightstart.get(Calendar.MILLISECOND));
-			nightstart.add(Calendar.SECOND, prefs.getInt(Constants.PREF_NIGHT_START, 23*3600));
+				Calendar nightstart = Calendar.getInstance();
+				nightstart.roll(Calendar.HOUR_OF_DAY, -1*nightstart.get(Calendar.HOUR_OF_DAY));
+				nightstart.roll(Calendar.MINUTE, -1*nightstart.get(Calendar.MINUTE));
+				nightstart.roll(Calendar.SECOND, -1*nightstart.get(Calendar.SECOND));
+				nightstart.roll(Calendar.MILLISECOND, -1*nightstart.get(Calendar.MILLISECOND));
+				nightstart.add(Calendar.SECOND, prefs.getInt(Constants.PREF_NIGHT_START, 23*3600));
 
-			Calendar nightstop = Calendar.getInstance();
-			nightstop.roll(Calendar.HOUR_OF_DAY, -1*nightstart.get(Calendar.HOUR_OF_DAY));
-			nightstop.roll(Calendar.MINUTE, -1*nightstart.get(Calendar.MINUTE));
-			nightstop.roll(Calendar.SECOND, -1*nightstart.get(Calendar.SECOND));
-			nightstop.roll(Calendar.MILLISECOND, -1*nightstart.get(Calendar.MILLISECOND));
-			nightstart.add(Calendar.SECOND, prefs.getInt(Constants.PREF_NIGHT_STOP, 6*3600));
-			if (nightstop.before(nightstart))
-				nightstop.add(Calendar.HOUR, 24);
+				Calendar nightstop = Calendar.getInstance();
+				nightstop.roll(Calendar.HOUR_OF_DAY, -1*nightstart.get(Calendar.HOUR_OF_DAY));
+				nightstop.roll(Calendar.MINUTE, -1*nightstart.get(Calendar.MINUTE));
+				nightstop.roll(Calendar.SECOND, -1*nightstart.get(Calendar.SECOND));
+				nightstop.roll(Calendar.MILLISECOND, -1*nightstart.get(Calendar.MILLISECOND));
+				nightstart.add(Calendar.SECOND, prefs.getInt(Constants.PREF_NIGHT_STOP, 6*3600));
+				if (nightstop.before(nightstart))
+					nightstop.add(Calendar.HOUR, 24);
 			
-			if (now.after(nightstart) && now.before(nightstop)) {
-				// entering night
-				Log.d(Constants.LOGTAG,"entered night time, disabling alarms");
-				
-				// get wake-lock to keep the CPU up
-				Helpers.acquireLock(context);
-				
-				// start the service to do the actual work
-				Intent sintent = new Intent(context, CollectorService.class);
-				sintent.setAction(Constants.ACTION_SCHEDULE);
-				sintent.putExtra(Constants.INTENT_EXTRA_SCHEDULER_START, false); // remove listeners etc
-				sintent.putExtra(Constants.INTENT_EXTRA_RELEASE_WL, true); // request service to release the wl
-				context.startService(sintent);
-				
-				// schedule wakeup alarm
-				AlarmManager am = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
-				Intent aintent = new Intent(Constants.ACTION_SCHEDULE_ALARM);
-				PendingIntent pi = PendingIntent.getBroadcast(context, 0, aintent, PendingIntent.FLAG_ONE_SHOT);
-
-				Log.d(Constants.LOGTAG,"wakeup alarm in " + ((nightstop.getTimeInMillis()-now.getTimeInMillis())/1000) + " s");
-
-				am.set(AlarmManager.RTC_WAKEUP,nightstop.getTimeInMillis(),pi);
-				
-			} else {
-				// normal periodic wakeup
-				
-				// get wake-lock to keep the CPU up
-				Helpers.acquireLock(context);
-				
-				// start the service to do the actual work
-				Intent sintent = new Intent(context, CollectorService.class);
-				sintent.setAction(Constants.ACTION_COLLECT);
-				sintent.putExtra(Constants.INTENT_EXTRA_RELEASE_WL, true); // request service to release the wl
-				context.startService(sintent);
+				if (now.after(nightstart) && now.before(nightstop)) {
+					// entering night
+					Log.d(Constants.LOGTAG,"enter night time, disable collector");
+					Helpers.stopCollector(context, true);
+					
+					// schedule wakeup alarm for next morning
+					AlarmManager am = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
+					Intent aintent = new Intent(Constants.ACTION_SCHEDULE_ALARM);
+					PendingIntent pi = PendingIntent.getBroadcast(context, 0, aintent, PendingIntent.FLAG_ONE_SHOT);
+					am.set(AlarmManager.RTC_WAKEUP,nightstop.getTimeInMillis(),pi);
+					Log.d(Constants.LOGTAG,"wakeup alarm in " + ((nightstop.getTimeInMillis()-now.getTimeInMillis())/1000) + " s");
+				}
 			}
 			
-		} else if (intent.getAction().equals(Constants.ACTION_SCHEDULE_ALARM)) {
-			// re-start the collector after night time
-			Log.d(Constants.LOGTAG,"collector schedule alarm went off, re-schedule periodic alarm");
-
+			// run measurements
+			
 			// get wake-lock to keep the CPU up
 			Helpers.acquireLock(context);
-			
+				
 			// start the service to do the actual work
 			Intent sintent = new Intent(context, CollectorService.class);
-			sintent.setAction(Constants.ACTION_SCHEDULE);
-			sintent.putExtra(Constants.INTENT_EXTRA_SCHEDULER_START, true);
+			sintent.setAction(Constants.ACTION_COLLECT);
 			sintent.putExtra(Constants.INTENT_EXTRA_RELEASE_WL, true); // request service to release the wl
-			context.startService(sintent);		
+			context.startService(sintent);
 			
+		} else if (intent.getAction().equals(Constants.ACTION_SCHEDULE_ALARM)) {
+			// re-start the collector after night time (check user pref in case they changed it at nigth)
+			if (prefs.getBoolean(Constants.PREF_HIDDEN_ENABLED, false)) {
+				Log.d(Constants.LOGTAG,"collector schedule alarm went off, re-schedule periodic alarm");
+				Helpers.startCollector(context, true);
+			}
 		} else if (intent.getAction().equals(Constants.ACTION_UPLOAD_ALARM)) {
 			// scheduled upload
 			Log.d(Constants.LOGTAG,"data upload alarm went off");
@@ -136,13 +118,12 @@ public class Scheduler extends BroadcastReceiver {
 	 * Schedule alarms.
 	 * @param c
 	 */
-	public static synchronized void set(Context c) {
+	public static synchronized void setAlarms(Context c) {
 		AlarmManager am = (AlarmManager)c.getSystemService(Context.ALARM_SERVICE);
 
-		String iv = Helpers.getUserSettings(c).getString(Constants.PREF_INTERVAL, Integer.toString(DEFAULT_IV));
-		long interval = Integer.parseInt(iv) * 60 * 1000; // min -> ms
-		
 		// periodic collection
+		String iv = Helpers.getSharedPreferences(c).getString(Constants.PREF_INTERVAL, Integer.toString(DEFAULT_IV));
+		long interval = Integer.parseInt(iv) * 60 * 1000; // min -> ms
 		Intent intent = new Intent(Constants.ACTION_COLLECT_ALARM);
 		PendingIntent pi = PendingIntent.getBroadcast(c, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
 		Log.d(Constants.LOGTAG,"next collection scheduled in " + (interval/1000) + " s");
@@ -152,6 +133,7 @@ public class Scheduler extends BroadcastReceiver {
 		        interval, 
 		        pi);
 		
+		// upload alarm
 		Intent intent2 = new Intent(Constants.ACTION_UPLOAD_ALARM);
 		PendingIntent pi2 = PendingIntent.getBroadcast(c, 0, intent2, PendingIntent.FLAG_CANCEL_CURRENT);
 		Log.d(Constants.LOGTAG,"next upload scheduled in " + AlarmManager.INTERVAL_HALF_DAY/(1000*60*60) + " h");
@@ -166,7 +148,7 @@ public class Scheduler extends BroadcastReceiver {
 	 * Cancel all alarms.
 	 * @param c
 	 */
-	public static synchronized void cancel(Context c) {
+	public static synchronized void cancelAllAlarms(Context c) {
 		AlarmManager am = (AlarmManager)c.getSystemService(Context.ALARM_SERVICE);
 		
 		Intent intent = new Intent(Constants.ACTION_COLLECT_ALARM);
@@ -188,13 +170,23 @@ public class Scheduler extends BroadcastReceiver {
 	}
 	
 	/**
-	 * Check if the periodic collector alarm is scheduled.
+	 * Cancel all alarms.
 	 * @param c
-	 * @return
 	 */
-	public static synchronized boolean isCollectorScheduled(Context c) {
+	public static synchronized void cancelPeriodicAlarms(Context c) {
+		AlarmManager am = (AlarmManager)c.getSystemService(Context.ALARM_SERVICE);
+		
 		Intent intent = new Intent(Constants.ACTION_COLLECT_ALARM);
 		PendingIntent pi = PendingIntent.getBroadcast(c, 0, intent, PendingIntent.FLAG_NO_CREATE);
-		return (pi!=null);
+		if (pi!=null) {
+			am.cancel(pi);
+		}
+		Intent intent2 = new Intent(Constants.ACTION_UPLOAD_ALARM);
+		PendingIntent pi2 = PendingIntent.getBroadcast(c, 0, intent2, PendingIntent.FLAG_NO_CREATE);
+		if (pi2!=null) {
+			am.cancel(pi2);
+		}
+		Log.d(Constants.LOGTAG,"alarms cancelled");
 	}
+	
 }

@@ -60,7 +60,7 @@ public final class DataUploader {
 	 */
 	public static boolean upload(Context c, DataStore ds) {
 		// upload settings
-		SharedPreferences prefs = Helpers.getUserSettings(c);
+		SharedPreferences prefs = Helpers.getSharedPreferences(c);
 		boolean requireWifi = prefs.getBoolean(Constants.PREF_UPLOAD_WIFI, true);
 		String country = prefs.getString(Constants.PREF_COUNTRY, null);
 		
@@ -82,12 +82,12 @@ public final class DataUploader {
 			return false;
 		}
 		
-		String uploadto = (country.equalsIgnoreCase("FR")) ? Constants.UPLOAD_URL_FR : Constants.UPLOAD_URL_UK;
+		String uploadto = Constants.UPLOAD_URLS.get(country);
 		URL url = null;
 		try {
 			url = new URL(uploadto);
 			if (!Helpers.isCaCertInstalled(url.getHost())) {
-				Log.w(Constants.LOGTAG, "uploader: missing required certificate, going to upload in cleartext!!");
+				Log.w(Constants.LOGTAG, "uploader: missing required certificate, going to upload in cleartext!! " + url.getHost());
 				url = new URL(uploadto.replace("https://", "http://"));						
 			}
 		} catch (MalformedURLException e) {

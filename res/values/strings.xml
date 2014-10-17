@@ -10,7 +10,10 @@
     <string-array name="pref_country_entries">
         <item>UK</item>
         <item>FR</item>
+        <item>test</item>
     </string-array>
+    <string name="pref_stop_night">Pause collector at night</string>
+    <string name="pref_stop_night_sum">Do not run during night hours (see below). Saves battery.</string>
     <string name="pref_start_hour">Pause collector at</string>
     <string name="pref_end_hour">Re-start collector at</string>
     <string name="pref_hour_set">Set</string>
@@ -19,7 +22,7 @@
     <string name="pref_upload_wifi_sum">Upload collected data only when connected to a WiFi network</string>
 	<string name="pref_advanced">Advanced settings</string>
     <string name="pref_web">Go to homepage</string>
-	
+    	
     <!-- Advanced settings screen -->
     <string name="pref_interval">Sampling interval (minutes)</string>
     <string-array name="pref_interval_entries">

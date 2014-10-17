@@ -25,13 +25,10 @@ import fr.inria.ucn.R;
 import fr.inria.ucn.Scheduler;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
-import android.content.res.Resources;
 import android.net.Uri;
 import android.os.Bundle;
 import android.preference.Preference;
 import android.preference.PreferenceFragment;
-import android.preference.PreferenceManager;
-import android.util.Log;
 
 /**
  * @author Anna-Kaisa Pietilainen <anna-kaisa.pietilainen@inria.fr>
@@ -46,8 +43,6 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
 	@Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        Resources res = getResources();
         
         // Load the preferences from an XML resource
         addPreferencesFromResource(R.xml.preferences);
@@ -61,8 +56,8 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
         if (prefs.getBoolean(Constants.PREF_HIDDEN_FIRST, true)) {
         	// set the default upload country based on the current timezone
         	String locale = TimeZone.getDefault().getDisplayName();
-    		Log.d(Constants.LOGTAG, "locale="+locale);
 			pref = findPreference(Constants.PREF_COUNTRY);
+			
 			SharedPreferences.Editor edit = prefs.edit();
     		if (locale.toLowerCase().contains("central european")) {
     			edit.putString(Constants.PREF_COUNTRY, "FR");
@@ -82,11 +77,11 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
 		pref = findPreference(Constants.PREF_COUNTRY);
 		pref.setSummary(country);		
 		
-		String hpage = (country.equals("FR") ? Constants.HOMEPAGE_URL_FR : Constants.HOMEPAGE_URL_UK);
 		pref = findPreference(Constants.PREF_WEB);
-		pref.setSummary(hpage);		
-		pref.getIntent().setData(Uri.parse(hpage));
-    }	
+		pref.setSummary(Constants.WEBSITE_URLS.get(country));		
+		pref.getIntent().setData(Uri.parse(Constants.WEBSITE_URLS.get(country)));
+		
+    }
 	
 	/* (non-Javadoc)
 	 * @see android.preference.PreferenceFragment#onDestroy()
@@ -102,11 +97,19 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
 	 * @see android.content.SharedPreferences.OnSharedPreferenceChangeListener#onSharedPreferenceChanged(android.content.SharedPreferences, java.lang.String)
 	 */
 	@Override
-	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences,
-			String key) {
+	public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
 		Preference pref = findPreference(key);
 		if (key.equals(Constants.PREF_INTERVAL)) {
 			pref.setSummary(sharedPreferences.getString(key, ""));
+		} else if (key.equals(Constants.PREF_COUNTRY)) {
+			String country = sharedPreferences.getString(Constants.PREF_COUNTRY, "");
+			pref.setSummary(country);
+			
+			pref = findPreference(Constants.PREF_WEB);
+			pref.setSummary(Constants.WEBSITE_URLS.get(country));		
+			pref.getIntent().setData(Uri.parse(Constants.WEBSITE_URLS.get(country)));			
+			
+			// TODO: check the certificate and promt install if not avail
 		}
 	}
 }

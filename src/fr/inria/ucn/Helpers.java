@@ -119,8 +119,8 @@ public final class Helpers {
 	}
 	
     /** Retrieve default preferences object. */
-    public static SharedPreferences getUserSettings(Context c) {
-    	return c.getSharedPreferences("fr.inria.ucn_preferences", Context.MODE_PRIVATE);
+    public static SharedPreferences getSharedPreferences(Context c) {
+    	return c.getSharedPreferences(Constants.PREFS, Context.MODE_PRIVATE);
     }
     
     /**
@@ -448,4 +448,38 @@ public final class Helpers {
 			}
         return lines;
 	}
+    
+    /**
+     * Start (schedule) the data collector service.
+     *  
+     * @param context
+     * @param wl         Need wakelock?
+     */
+    public static void startCollector(Context context, boolean wl) {
+    	if (wl)
+			Helpers.acquireLock(context);
+		Intent sintent = new Intent(context, CollectorService.class);
+		sintent.setAction(Constants.ACTION_SCHEDULE);
+		sintent.putExtra(Constants.INTENT_EXTRA_SCHEDULER_START, true);
+		if (wl)
+			sintent.putExtra(Constants.INTENT_EXTRA_RELEASE_WL, true); // request service to release the wl
+		context.startService(sintent);
+    }
+    
+    /**
+     * Stop (schedule) the data collector service.
+     *  
+     * @param context
+     * @param wl         Need wakelock?
+     */
+    public static void stopCollector(Context context, boolean wl) {
+    	if (wl)
+			Helpers.acquireLock(context);
+		Intent sintent = new Intent(context, CollectorService.class);
+		sintent.setAction(Constants.ACTION_SCHEDULE);
+		sintent.putExtra(Constants.INTENT_EXTRA_SCHEDULER_START, false);
+		if (wl)
+			sintent.putExtra(Constants.INTENT_EXTRA_RELEASE_WL, true); // request service to release the wl
+		context.startService(sintent);    	
+    }
 }

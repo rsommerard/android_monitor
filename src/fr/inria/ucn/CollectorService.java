@@ -34,7 +34,6 @@ import fr.inria.ucn.listeners.SystemStateListener;
 import android.app.IntentService;
 import android.content.Intent;
 import android.database.SQLException;
-import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 
 /**
@@ -89,6 +88,7 @@ public class CollectorService extends IntentService {
 		dstore.close();
 		oneshotCollectors.clear();
 		periodicCollectors.clear();
+		
 		// FIXME: this should really remain active on the bg.. 
 		if (psl.isEnabled()) {
 			psl.disable(this.getApplicationContext());
@@ -125,7 +125,7 @@ public class CollectorService extends IntentService {
 
 				// schedule periodic collection
 				Log.d(Constants.LOGTAG,"set alarm");
-				Scheduler.set(getApplicationContext());
+				Scheduler.setAlarms(getApplicationContext());
 
 				// run onetime collectors
 				for (Collector c : oneshotCollectors) {
@@ -140,7 +140,7 @@ public class CollectorService extends IntentService {
 
 				// stop periodic collection
 				Log.d(Constants.LOGTAG,"cancel alarm");
-				Scheduler.cancel(getApplicationContext());
+				Scheduler.cancelPeriodicAlarms(getApplicationContext());
 
 				// stop background listeners
 				Log.d(Constants.LOGTAG, "disableReceiver " + SystemStateListener.class);
@@ -153,9 +153,6 @@ public class CollectorService extends IntentService {
 				Log.d(Constants.LOGTAG, "disableReceiver " + OnBootReceiver.class);
 				Helpers.disableReceiver(this.getApplicationContext(), OnBootReceiver.class);
 			}
-			
-			// notify UI
-			sendStatusBcast(Constants.STATUS_RUNNING_SINCE, nows);			
 
 			// queue first/last collect action
 			Intent sintent = new Intent(this.getApplicationContext(), CollectorService.class);
@@ -174,7 +171,6 @@ public class CollectorService extends IntentService {
 				Log.d(Constants.LOGTAG, "run " + c.getClass().getSimpleName());
 				c.run(this.getApplicationContext(),nowts);
 			}
-			sendStatusBcast(Constants.STATUS_RUNNING_SINCE, nows);		
 			
 		} else if (intent.getAction().equals(Constants.ACTION_DATA)) {
 			String data = intent.getStringExtra(Constants.INTENT_EXTRA_DATA);
@@ -184,12 +180,10 @@ public class CollectorService extends IntentService {
 			if (DataUploader.upload(getApplicationContext(), dstore)) {
 				try {
 					dstore.addKeyValue(Constants.STATUS_LAST_UPLOAD, nows);
-					sendStatusBcast(Constants.STATUS_LAST_UPLOAD, nows);					
 				} catch (CollectorException ex) {
 				}	
 			} else {
 				Log.w(Constants.LOGTAG, "data upload failed");
-				sendStatusBcast(Constants.STATUS_LAST_UPLOAD_FAILED, null);					
 			}
 			
 		} else if (intent.getAction().equals(Constants.ACTION_RELEASE_WL)) {
@@ -206,19 +200,5 @@ public class CollectorService extends IntentService {
 			sintent.setAction(Constants.ACTION_RELEASE_WL);
 			startService(sintent);
 		}
-	}
-
-	/* Status broadcast for the UI. */
-	private void sendStatusBcast(String extrakey, String extravalue) {
-		Intent intent = new Intent(Constants.ACTION_STATUS);
-		if (extrakey!=null)
-			intent.putExtra(
-					Constants.INTENT_EXTRA_STATUS_KEY, 
-					extrakey);
-		if (extravalue!=null)
-			intent.putExtra(
-					Constants.INTENT_EXTRA_STATUS_VALUE, 
-					extravalue);
-	    LocalBroadcastManager.getInstance(this.getApplicationContext()).sendBroadcast(intent);		
 	}
 }

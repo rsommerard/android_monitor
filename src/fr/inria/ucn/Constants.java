@@ -18,6 +18,9 @@
  ******************************************************************************/
 package fr.inria.ucn;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * @author Anna-Kaisa Pietilainen <anna-kaisa.pietilainen@inria.fr>
  *
@@ -72,6 +75,10 @@ public interface Constants {
 	/** CPU wake-lock identifier. */
 	public static final String CPU_WAKE_LOCK = "fr.inria.ucn.collector.wakelock";
 	
+	/** Shared prefs identifier. */
+	public static final String PREFS = "fr.inria.ucn.prefs";
+	
+	
     /** Periodic collection interval. */
     public static final String PREF_INTERVAL = "pref_interval";
     /** Periodic collection night pause start. */
@@ -84,14 +91,24 @@ public interface Constants {
     public static final String PREF_UPLOAD_WIFI = "pref_upload_wifi";
     /** Url. */
     public static final String PREF_WEB = "pref_web";
+    /** Pause collection pref. */
+    public static final String PREF_STOP_NIGHT = "pref_stop_night";
+    
     /** Hidden prefs to store some static info */
     public static final String PREF_HIDDEN_FIRST = "pref_hidden_first";
+    public static final String PREF_HIDDEN_ENABLED = "pref_hidden_enabled";
     
-    /** URLs for FR. */
-    public static final String UPLOAD_URL_FR = "https://cmon.lip6.fr/upload/";
-    public static final String HOMEPAGE_URL_FR = "https://cmon.lip6.fr/ucn/";
+    @SuppressWarnings("serial")
+	public static final Map<String, String> UPLOAD_URLS = new HashMap<String,String>() {{
+    	put("FR","https://cmon.lip6.fr/upload/");
+    	put("UK","https://horizab4.memset.net/upload/");
+    	put("test","http://192.168.1.174:3003");
+    }};
     
-    /** URLs for UK. */
-    public static final String UPLOAD_URL_UK = "https://horizab4.memset.net/upload/";
-    public static final String HOMEPAGE_URL_UK = "https://horizab4.memset.net/ucn/";
+    @SuppressWarnings("serial")
+	public static final Map<String, String> WEBSITE_URLS = new HashMap<String,String>() {{
+    	put("FR","https://cmon.lip6.fr/ucn/");
+    	put("UK","https://horizab4.memset.net/ucn/");
+    	put("test","http://192.168.1.174:3002");
+    }};
 }	

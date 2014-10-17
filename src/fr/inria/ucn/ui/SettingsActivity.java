@@ -18,12 +18,18 @@
  ******************************************************************************/
 package fr.inria.ucn.ui;
 
+import fr.inria.ucn.Constants;
+import fr.inria.ucn.Helpers;
 import fr.inria.ucn.R;
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.widget.CompoundButton;
+import android.widget.Switch;
 
 /**
  * Collector preferences.
@@ -40,9 +46,9 @@ public class SettingsActivity extends Activity {
 	@Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        PreferenceManager.setDefaultValues(this, R.xml.preferences, false);
         
+        PreferenceManager.setDefaultValues(this, Constants.PREFS, MODE_PRIVATE, R.xml.preferences, false);
+                
         // Display the fragment as the main content.
         getFragmentManager().beginTransaction()
                 .replace(android.R.id.content, new SettingsFragment())
@@ -56,7 +62,29 @@ public class SettingsActivity extends Activity {
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
 	    MenuInflater inflater = getMenuInflater();
-	    inflater.inflate(R.menu.actionbar_toggle, menu);
-	    return true;
-	}	
+	    inflater.inflate(R.menu.actionbar_toggle, menu);	    	  
+	    
+	    // On-Off toggle handler
+	    Switch s = (Switch)menu.findItem(R.id.onoffswitch).getActionView().findViewById(R.id.switchForActionBar);
+	    s.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+			@Override
+			public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+				// store the setting so that the on-boot receiver can restore the correct state
+				SharedPreferences prefs = Helpers.getSharedPreferences(getApplicationContext());
+				SharedPreferences.Editor edit = prefs.edit();
+				edit.putBoolean(Constants.PREF_HIDDEN_ENABLED, isChecked);
+				edit.commit();
+				
+				if (isChecked) {
+					Log.d(Constants.LOGTAG, "enable data collector");
+					Helpers.startCollector(getApplicationContext(), false);
+				} else {
+					Log.d(Constants.LOGTAG, "disable data collector");
+					Helpers.stopCollector(getApplicationContext(), false);
+				}
+			}
+		});
+	    
+	    return super.onCreateOptionsMenu(menu);
+	}
 }
