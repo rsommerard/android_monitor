@@ -12,7 +12,7 @@
     <string name="pref_stop_night">Pause collector at night</string>
     <string name="pref_stop_night_sum">Do not run during night hours (see below). Saves battery.</string>
     <string name="pref_start_hour">Pause collector at</string>
-    <string name="pref_end_hour">Re-start collector at</string>
+    <string name="pref_stop_hour">Re-start collector at</string>
     <string name="pref_hour_set">Set</string>
     <string name="pref_hour_cancel">Cancel</string>
     <string name="pref_upload_wifi">Upload only on WiFi</string>

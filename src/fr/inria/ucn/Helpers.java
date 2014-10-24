@@ -31,6 +31,7 @@ import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.List;
@@ -53,6 +54,7 @@ import android.content.pm.PackageManager.NameNotFoundException;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.PowerManager;
+import android.preference.PreferenceManager;
 import android.provider.Settings.Secure;
 import android.telephony.TelephonyManager;
 import android.util.Log;
@@ -507,4 +509,80 @@ public final class Helpers {
 			sintent.putExtra(Constants.INTENT_EXTRA_RELEASE_WL, true); // request service to release the wl
 		context.startService(sintent);    	
     }
+
+    /**
+     * @param c
+     * @return <code>True</code> if user has enabled the night-time mode and current time is
+     * within night, else <code>False</code>.
+     */
+    public static boolean isNightTime(Context c) {
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(c);
+		if (!prefs.getBoolean(Constants.PREF_STOP_NIGHT, false))
+			return false;
+		
+		int nstart = prefs.getInt(Constants.PREF_NIGHT_START, 23*3600);
+		int nstop = prefs.getInt(Constants.PREF_NIGHT_STOP, 6*3600);
+			
+		Calendar nightstart = Calendar.getInstance();
+		nightstart.roll(Calendar.HOUR_OF_DAY, -1*nightstart.get(Calendar.HOUR_OF_DAY));
+		nightstart.roll(Calendar.MINUTE, -1*nightstart.get(Calendar.MINUTE));
+		nightstart.roll(Calendar.SECOND, -1*nightstart.get(Calendar.SECOND));
+		nightstart.roll(Calendar.MILLISECOND, -1*nightstart.get(Calendar.MILLISECOND));
+		nightstart.add(Calendar.SECOND, nstart);
+
+		Calendar nightstop = Calendar.getInstance();
+		nightstop.roll(Calendar.HOUR_OF_DAY, -1*nightstop.get(Calendar.HOUR_OF_DAY));
+		nightstop.roll(Calendar.MINUTE, -1*nightstop.get(Calendar.MINUTE));
+		nightstop.roll(Calendar.SECOND, -1*nightstop.get(Calendar.SECOND));
+		nightstop.roll(Calendar.MILLISECOND, -1*nightstop.get(Calendar.MILLISECOND));
+		nightstop.add(Calendar.SECOND, nstop);
+		if (nightstop.before(nightstart))
+			nightstop.add(Calendar.HOUR, 24);
+			
+		Log.d(Constants.LOGTAG, "nightstart " + nstart + " -> " + nightstart.toString());
+		Log.d(Constants.LOGTAG, "nightstop " + nstop + " -> " + nightstop.toString());
+		
+		Calendar now = Calendar.getInstance();		
+		return (now.after(nightstart) && now.before(nightstop));
+    }
+    
+    /**
+     * 
+     * @param c
+     * @return -1 if not at night-time (or feature disabled), else milliseconds until morning.
+     */
+    public static long getNightEnd(Context c) {
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(c);
+		if (!prefs.getBoolean(Constants.PREF_STOP_NIGHT, false))
+			return -1;
+		
+		int nstart = prefs.getInt(Constants.PREF_NIGHT_START, 23*3600);
+		int nstop = prefs.getInt(Constants.PREF_NIGHT_STOP, 6*3600);
+			
+		Calendar nightstart = Calendar.getInstance();
+		nightstart.roll(Calendar.HOUR_OF_DAY, -1*nightstart.get(Calendar.HOUR_OF_DAY));
+		nightstart.roll(Calendar.MINUTE, -1*nightstart.get(Calendar.MINUTE));
+		nightstart.roll(Calendar.SECOND, -1*nightstart.get(Calendar.SECOND));
+		nightstart.roll(Calendar.MILLISECOND, -1*nightstart.get(Calendar.MILLISECOND));
+		nightstart.add(Calendar.SECOND, nstart);
+
+		Calendar nightstop = Calendar.getInstance();
+		nightstop.roll(Calendar.HOUR_OF_DAY, -1*nightstop.get(Calendar.HOUR_OF_DAY));
+		nightstop.roll(Calendar.MINUTE, -1*nightstop.get(Calendar.MINUTE));
+		nightstop.roll(Calendar.SECOND, -1*nightstop.get(Calendar.SECOND));
+		nightstop.roll(Calendar.MILLISECOND, -1*nightstop.get(Calendar.MILLISECOND));
+		nightstop.add(Calendar.SECOND, nstop);
+		if (nightstop.before(nightstart))
+			nightstop.add(Calendar.HOUR, 24);
+			
+		Log.d(Constants.LOGTAG, "nightstart " + nstart + " -> " + nightstart.toString());
+		Log.d(Constants.LOGTAG, "nightstop " + nstop + " -> " + nightstop.toString());
+		
+		Calendar now = Calendar.getInstance();		
+		if (now.after(nightstart) && now.before(nightstop)) {
+			return nightstop.getTimeInMillis();
+		} else {
+			return -1;
+		}
+    }    
 }

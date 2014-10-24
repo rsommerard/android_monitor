@@ -18,14 +18,21 @@
  ******************************************************************************/
 package fr.inria.ucn.ui;
 
+import java.io.BufferedInputStream;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
+
 import fr.inria.ucn.Constants;
 import fr.inria.ucn.Helpers;
 import fr.inria.ucn.R;
 import fr.inria.ucn.Scheduler;
 import android.app.Activity;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.security.KeyChain;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -66,8 +73,10 @@ public class SettingsActivity extends Activity {
 	    inflater.inflate(R.menu.actionbar_toggle, menu);	    	  
 	    
 	    // On-Off toggle handler
+		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(getApplicationContext());
 	    Switch s = (Switch)menu.findItem(R.id.onoffswitch).getActionView().findViewById(R.id.switchForActionBar);
-    	s.setChecked(Scheduler.isScheduled(getApplicationContext()));
+    	s.setChecked(Scheduler.isScheduled(getApplicationContext()) || 
+    			(Helpers.isNightTime(getApplicationContext()) && prefs.getBoolean(Constants.PREF_HIDDEN_ENABLED, false)));
 	    
 	    s.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
 			@Override
@@ -80,6 +89,38 @@ public class SettingsActivity extends Activity {
 				
 				if (isChecked) {
 					Log.d(Constants.LOGTAG, "enable data collector");
+					
+					// make sure we have the cert installed
+					String uploadurl = Constants.UPLOAD_URLS.get(prefs.getString(Constants.PREF_COUNTRY, null));
+					if (uploadurl!=null) {
+						BufferedInputStream bis = null;
+						try {
+							URL url = new URL(uploadurl);
+							if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.ICE_CREAM_SANDWICH &&
+									!Helpers.isCaCertInstalled(url.getHost()) && url.getProtocol().equals("https")) 
+							{					
+								// prompt user to install the self-signed ca certificate - for https uploads
+								Log.d(Constants.LOGTAG, "missing required ca certificate for " + url.getHost()); 
+								bis = new BufferedInputStream(getAssets().open(url.getHost() + ".ca.pem"));
+								byte[] keychain = new byte[bis.available()];
+								bis.read(keychain);
+
+								Intent installIntent = KeyChain.createInstallIntent();
+								installIntent.putExtra(KeyChain.EXTRA_CERTIFICATE, keychain);
+								installIntent.putExtra(KeyChain.EXTRA_NAME, url.getHost());
+								startActivityForResult(installIntent, 1);		
+							}
+						} catch (MalformedURLException e) {
+						} catch (IOException e) {
+							Log.e(Constants.LOGTAG, "failed to read certificate",e); 
+						} finally {
+							if (bis!=null)
+								try {
+									bis.close();
+								} catch (IOException e) {
+								}
+						}
+					}	
 					Helpers.startCollector(getApplicationContext(), false);
 				} else {
 					Log.d(Constants.LOGTAG, "disable data collector");

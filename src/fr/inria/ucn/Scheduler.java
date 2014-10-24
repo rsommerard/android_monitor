@@ -18,8 +18,6 @@
  ******************************************************************************/
 package fr.inria.ucn;
 
-import java.util.Calendar;
-
 import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.BroadcastReceiver;
@@ -48,43 +46,22 @@ public class Scheduler extends BroadcastReceiver {
 	@Override
 	public void onReceive(Context context, Intent intent) {
 		SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(context);
-		if (intent.getAction().equals(Constants.ACTION_COLLECT_ALARM)) {
-			if (prefs.getBoolean(Constants.PREF_STOP_NIGHT, false)) {
-				// check if we enter night time
-				Calendar now = Calendar.getInstance();
-
-				Calendar nightstart = Calendar.getInstance();
-				nightstart.roll(Calendar.HOUR_OF_DAY, -1*nightstart.get(Calendar.HOUR_OF_DAY));
-				nightstart.roll(Calendar.MINUTE, -1*nightstart.get(Calendar.MINUTE));
-				nightstart.roll(Calendar.SECOND, -1*nightstart.get(Calendar.SECOND));
-				nightstart.roll(Calendar.MILLISECOND, -1*nightstart.get(Calendar.MILLISECOND));
-				nightstart.add(Calendar.SECOND, prefs.getInt(Constants.PREF_NIGHT_START, 23*3600));
-
-				Calendar nightstop = Calendar.getInstance();
-				nightstop.roll(Calendar.HOUR_OF_DAY, -1*nightstart.get(Calendar.HOUR_OF_DAY));
-				nightstop.roll(Calendar.MINUTE, -1*nightstart.get(Calendar.MINUTE));
-				nightstop.roll(Calendar.SECOND, -1*nightstart.get(Calendar.SECOND));
-				nightstop.roll(Calendar.MILLISECOND, -1*nightstart.get(Calendar.MILLISECOND));
-				nightstart.add(Calendar.SECOND, prefs.getInt(Constants.PREF_NIGHT_STOP, 6*3600));
-				if (nightstop.before(nightstart))
-					nightstop.add(Calendar.HOUR, 24);
-			
-				if (now.after(nightstart) && now.before(nightstop)) {
-					// entering night
-					Log.d(Constants.LOGTAG,"enter night time, disable collector");
-					Helpers.stopCollector(context, true);
-					
-					// schedule wakeup alarm for next morning
-					AlarmManager am = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
-					Intent aintent = new Intent(Constants.ACTION_SCHEDULE_ALARM);
-					PendingIntent pi = PendingIntent.getBroadcast(context, 0, aintent, PendingIntent.FLAG_ONE_SHOT);
-					am.set(AlarmManager.RTC_WAKEUP,nightstop.getTimeInMillis(),pi);
-					Log.d(Constants.LOGTAG,"wakeup alarm in " + ((nightstop.getTimeInMillis()-now.getTimeInMillis())/1000) + " s");
-				}
+		
+		if (intent.getAction().equals(Constants.ACTION_COLLECT_ALARM)) {		
+			long tsend = Helpers.getNightEnd(context);
+			if (tsend>0) {
+				Log.d(Constants.LOGTAG,"enter night time, disable collector");
+				Helpers.stopCollector(context, true);
+				
+				// schedule wakeup alarm for next morning
+				AlarmManager am = (AlarmManager)context.getSystemService(Context.ALARM_SERVICE);
+				Intent aintent = new Intent(Constants.ACTION_SCHEDULE_ALARM);
+				PendingIntent pi = PendingIntent.getBroadcast(context, 0, aintent, PendingIntent.FLAG_ONE_SHOT);
+				am.set(AlarmManager.RTC_WAKEUP, tsend, pi);
+			} else {
+				// run measurements
+				Helpers.doSample(context, true);
 			}
-			// run measurements
-			Helpers.doSample(context, true);
-			
 		} else if (intent.getAction().equals(Constants.ACTION_SCHEDULE_ALARM)) {
 			// re-start the collector after night time (check user pref in case they changed it at nigth)
 			if (prefs.getBoolean(Constants.PREF_HIDDEN_ENABLED, false)) {
@@ -105,9 +82,9 @@ public class Scheduler extends BroadcastReceiver {
 	public static synchronized void setAlarms(Context c) {
 		AlarmManager am = (AlarmManager)c.getSystemService(Context.ALARM_SERVICE);
 
-		// periodic collection
+		// periodic collector alarm (configured exact interval)
 		String iv = PreferenceManager.getDefaultSharedPreferences(c).getString(Constants.PREF_INTERVAL, Integer.toString(DEFAULT_IV));
-		long interval = Integer.parseInt(iv) * 60 * 1000; // min -> ms
+		long interval = Integer.parseInt(iv) * 60 * 1000; // min -> s -> ms
 		Intent intent = new Intent(Constants.ACTION_COLLECT_ALARM);
 		PendingIntent pi = PendingIntent.getBroadcast(c, 0, intent, PendingIntent.FLAG_CANCEL_CURRENT);
 		Log.d(Constants.LOGTAG,"next collection scheduled in " + (interval/1000) + " s");
@@ -117,15 +94,15 @@ public class Scheduler extends BroadcastReceiver {
 		        interval, 
 		        pi);
 		
-		// upload alarm
+		// periodic upload alarm (roughly twice a day)
 		Intent intent2 = new Intent(Constants.ACTION_UPLOAD_ALARM);
 		PendingIntent pi2 = PendingIntent.getBroadcast(c, 0, intent2, PendingIntent.FLAG_CANCEL_CURRENT);
 		Log.d(Constants.LOGTAG,"next upload scheduled in " + AlarmManager.INTERVAL_HALF_DAY/(1000*60*60) + " h");
 		am.setInexactRepeating(
 				AlarmManager.ELAPSED_REALTIME,
-					SystemClock.elapsedRealtime()+AlarmManager.INTERVAL_HALF_DAY, 
-					AlarmManager.INTERVAL_HALF_DAY, 
-					pi2);
+				SystemClock.elapsedRealtime()+AlarmManager.INTERVAL_HALF_DAY, 
+				AlarmManager.INTERVAL_HALF_DAY, 
+				pi2);
 	}
 
 	/**

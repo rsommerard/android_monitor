@@ -42,8 +42,8 @@ public class TimePreference extends DialogPreference {
     /* We store the pref value internally as seconds since 00:00 */
     private int getValue() {
     	if (this.h==24)
-        	return this.m*60;
-    	return this.h*3600 + this.m*60;
+        	return this.m*60; // 00:mm
+    	return this.h*3600 + this.m*60; // hh:mm
     }
     private int getHour(int v) {
     	return (int)v/3600;

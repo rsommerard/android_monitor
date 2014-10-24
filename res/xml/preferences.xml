@@ -24,9 +24,9 @@
  	<fr.inria.ucn.ui.TimePreference
         android:defaultValue="21600"
         android:dependency="pref_stop_night"
-        android:key="pref_end_hour"
+        android:key="pref_stop_hour"
         android:summary="06:00"
-        android:title="@string/pref_end_hour" />
+        android:title="@string/pref_stop_hour" />
  	
  	<CheckBoxPreference
         android:defaultValue="true"
