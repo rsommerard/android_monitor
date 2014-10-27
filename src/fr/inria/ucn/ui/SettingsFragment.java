@@ -18,6 +18,8 @@
  ******************************************************************************/
 package fr.inria.ucn.ui;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.TimeZone;
 
 import fr.inria.ucn.Constants;
@@ -37,6 +39,8 @@ import android.preference.PreferenceFragment;
  */
 public class SettingsFragment extends PreferenceFragment implements OnSharedPreferenceChangeListener {
 	
+	private static DateFormat df = SimpleDateFormat.getDateTimeInstance();
+
 	/*
 	 * (non-Javadoc)
 	 * @see android.preference.PreferenceFragment#onCreate(android.os.Bundle)
@@ -81,6 +85,9 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
 		pref = findPreference(Constants.PREF_WEB);
 		pref.setSummary(Constants.WEBSITE_URLS.get(country));		
 		pref.getIntent().setData(Uri.parse(Constants.WEBSITE_URLS.get(country)));
+
+		pref = findPreference(Constants.PREF_UPLOAD);
+		pref.setSummary(df.format(prefs.getLong(Constants.PREF_HIDDEN_LASTUPLOAD, 0)));		
 		
 		// handle upload clicks from 'Advanced Settings'
 		pref = findPreference("pref_upload");
@@ -121,6 +128,9 @@ public class SettingsFragment extends PreferenceFragment implements OnSharedPref
 			pref = findPreference(Constants.PREF_WEB);
 			pref.setSummary(Constants.WEBSITE_URLS.get(country));		
 			pref.getIntent().setData(Uri.parse(Constants.WEBSITE_URLS.get(country)));			
+		} else if (key.equals(Constants.PREF_HIDDEN_LASTUPLOAD)) {
+			pref = findPreference(Constants.PREF_UPLOAD);
+			pref.setSummary(df.format(prefs.getLong(Constants.PREF_HIDDEN_LASTUPLOAD, 0)));		
 		}
 	}
 }

@@ -94,6 +94,8 @@ public interface Constants {
     /** Hidden prefs to store some static info */
     public static final String PREF_HIDDEN_FIRST = "pref_hidden_first";
     public static final String PREF_HIDDEN_ENABLED = "pref_hidden_enabled";
+    public static final String PREF_HIDDEN_LASTUPLOAD = "pref_hidden_lastupload";
+    public static final String PREF_UPLOAD = "pref_upload";
     
     @SuppressWarnings("serial")
 	public static final Map<String, String> UPLOAD_URLS = new HashMap<String,String>() {{

@@ -122,6 +122,13 @@ public final class DataUploader {
 				break;
 			} 
 		}
+		
+		if (res) {
+			SharedPreferences.Editor edit = prefs.edit();
+			edit.putLong(Constants.PREF_HIDDEN_LASTUPLOAD, System.currentTimeMillis());
+			edit.commit();
+		}
+		
 		Log.d(Constants.LOGTAG,"uploader: uploaded " + count + " objects, result is " + (res ? "success" : "failure"));
 		return res;
 	}
