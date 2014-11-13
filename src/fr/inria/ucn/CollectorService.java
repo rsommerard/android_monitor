@@ -27,6 +27,7 @@ import fr.inria.ucn.collectors.DeviceInfoCollector;
 import fr.inria.ucn.collectors.LlamaCollector;
 import fr.inria.ucn.collectors.NetworkStateCollector;
 import fr.inria.ucn.collectors.RunningAppsCollector;
+import fr.inria.ucn.collectors.SocketsCollector;
 import fr.inria.ucn.collectors.SysStateCollector;
 import fr.inria.ucn.listeners.MyPhoneStateListener;
 import fr.inria.ucn.listeners.SystemStateListener;
@@ -70,6 +71,7 @@ public class CollectorService extends IntentService {
 
 		periodicCollectors.add(new SysStateCollector());
 		periodicCollectors.add(new NetworkStateCollector());		
+		periodicCollectors.add(new SocketsCollector());		
 		periodicCollectors.add(new RunningAppsCollector());
 		periodicCollectors.add(new AppDataUsageCollector());
 		periodicCollectors.add(new LlamaCollector());
