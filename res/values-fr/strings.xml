@@ -9,20 +9,22 @@
         <item>FR</item>
         <item>UK</item>
     </string-array>
-    <string name="pref_stop_night">Pause collector at night</string>
-    <string name="pref_stop_night_sum">Do not run during night hours (see below). Saves battery.</string>
-    <string name="pref_start_hour">Pause collector at</string>
-    <string name="pref_stop_hour">Re-start collector at</string>
-    <string name="pref_hour_set">Set</string>
-    <string name="pref_hour_cancel">Cancel</string>
-    <string name="pref_upload_wifi">Upload only on WiFi</string>
-    <string name="pref_upload_wifi_sum">Upload collected data only when connected to a WiFi network</string>
-	<string name="pref_advanced">Advanced settings</string>
-    <string name="pref_web">Go to homepage</string>
+    
+    <string name="pref_stop_night">Arreter la collecte de donnee la nuit</string>
+    <string name="pref_stop_night_sum">La collecte est arreter entre les heures indiquee au-dessous (pour sauvegarder la batterie).</string>
+    <string name="pref_start_hour">Arreter la collecte a</string>
+    <string name="pref_stop_hour">Redemarrer la collecte a</string>
+    
+    <string name="pref_hour_set">OK</string>
+    <string name="pref_hour_cancel">Annuler</string>
+    <string name="pref_upload_wifi">Envoi WiFi</string>
+    <string name="pref_upload_wifi_sum">Envoyer les données uniquement quand vous êtes connecté au WiFi</string>
+    <string name="pref_advanced">Paramètres avancés</string>
+    <string name="pref_web">Visitez notre site web</string>
     	
     <!-- Advanced settings screen -->
-    <string name="pref_upload">Upload data</string>
-    <string name="pref_interval">Sampling interval (minutes)</string>
+    <string name="pref_upload">Envoyer maintenant</string>
+    <string name="pref_interval">Intervalle de collecte (minutes)</string>
     <string-array name="pref_interval_entries">
         <item>3</item>
         <item>4</item>
