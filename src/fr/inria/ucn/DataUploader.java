@@ -87,9 +87,12 @@ public final class DataUploader {
 		URL url = null;
 		try {
 			url = new URL(uploadto);
-			if (url.getProtocol().equals("https") && !Helpers.isCaCertInstalled(url.getHost())) {
-				Log.w(Constants.LOGTAG, "uploader: missing required certificate, going to upload in cleartext!! " + url.getHost());
-				url = new URL(uploadto.replace("https://", "http://"));						
+			// TODO: remove once the uk server has valid SSL certificate
+			if ("UK".equals(country)) {
+				if (url.getProtocol().equals("https") && !Helpers.isCaCertInstalledHack(url.getHost())) {
+					Log.w(Constants.LOGTAG, "uploader: missing required certificate, going to upload in cleartext!! " + url.getHost());
+					url = new URL(uploadto.replace("https://", "http://"));						
+				}
 			}
 		} catch (MalformedURLException e) {
 			Log.w(Constants.LOGTAG, "uploader: invalid upload url "+uploadto+", can't upload",e);				

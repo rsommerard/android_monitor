@@ -200,6 +200,8 @@ public final class Helpers {
 			sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
 			res.put("ts_event", sdf.format(new Date(ts)));
 			res.put("ts", sdf.format(new Date()));
+			res.put("tz", TimeZone.getDefault().getID()); // devices current timezone
+			res.put("tz_offset", TimeZone.getDefault().getOffset(ts)); // ts offset to this event
 			
 			// the data obj
 			res.put("data", data);
@@ -390,10 +392,10 @@ public final class Helpers {
 	}
 	
 	/**
-	 * 
+	 * FIXME: remove once all servers have valid certificate
 	 * @return
 	 */
-    public static boolean isCaCertInstalled(String match) {
+    public static boolean isCaCertInstalledHack(String match) {
     	boolean res = false;
 		try {
 			KeyStore ks = KeyStore.getInstance("AndroidCAStore");

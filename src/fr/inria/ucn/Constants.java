@@ -99,15 +99,15 @@ public interface Constants {
     
     @SuppressWarnings("serial")
 	public static final Map<String, String> UPLOAD_URLS = new HashMap<String,String>() {{
-    	put("FR","https://cmon.lip6.fr/upload/");
+    	put("FR","https://muse.inria.fr/upload/");
     	put("UK","https://horizab4.memset.net/upload/");
-    	put("test","http://192.168.1.174:3001");
+//    	put("test","http://192.168.1.174:3001");
     }};
     
     @SuppressWarnings("serial")
 	public static final Map<String, String> WEBSITE_URLS = new HashMap<String,String>() {{
-    	put("FR","https://cmon.lip6.fr/ucn/");
+    	put("FR","https://muse.inria.fr/ucn/");
     	put("UK","https://horizab4.memset.net/ucn/");
-    	put("test","http://192.168.1.174:3002/ucn/");
+//    	put("test","http://192.168.1.174:3002/ucn/");
     }};
-}	
+}
