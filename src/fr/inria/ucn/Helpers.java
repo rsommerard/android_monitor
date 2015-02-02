@@ -24,16 +24,10 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
-import java.security.KeyStore;
-import java.security.KeyStoreException;
-import java.security.NoSuchAlgorithmException;
-import java.security.cert.CertificateException;
-import java.security.cert.X509Certificate;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.TimeZone;
 import java.util.UUID;
@@ -143,7 +137,7 @@ public final class Helpers {
 	 * @param c
 	 * @param component
 	 */
-	public static void enableReceiver(Context c, Class component) {
+	public static void enableReceiver(Context c, @SuppressWarnings("rawtypes") Class component) {
 		ComponentName receiver = new ComponentName(c, component);
 		PackageManager pm = c.getPackageManager();
 		pm.setComponentEnabledSetting(
@@ -157,7 +151,7 @@ public final class Helpers {
 	 * @param c
 	 * @param component
 	 */
-	public static void disableReceiver(Context c, Class component) {		
+	public static void disableReceiver(Context c, @SuppressWarnings("rawtypes") Class component) {		
 		ComponentName receiver = new ComponentName(c, component);
 		PackageManager pm = c.getPackageManager();
 		pm.setComponentEnabledSetting(
@@ -389,34 +383,6 @@ public final class Helpers {
 			}
 		}
 		return res;		
-	}
-	
-	/**
-	 * FIXME: remove once all servers have valid certificate
-	 * @return
-	 */
-    public static boolean isCaCertInstalledHack(String match) {
-    	boolean res = false;
-		try {
-			KeyStore ks = KeyStore.getInstance("AndroidCAStore");
-			ks.load(null, null);
-			Enumeration<String> aliases = ks.aliases();
-			while (aliases.hasMoreElements()) {
-			    String alias = aliases.nextElement();
-			    X509Certificate cert = (X509Certificate)ks.getCertificate(alias);
-			    //Log.d(Constants.LOGTAG, "keystore: " + alias + "/" + cert.getIssuerDN().getName());
-			    if (cert.getIssuerDN().getName().contains(match)) {
-			    	res = true;
-			    	break;
-			    }
-			}		
-		} catch (KeyStoreException e) {
-			Log.w(Constants.LOGTAG, "failed to check certificates", e);
-		} catch (NoSuchAlgorithmException e) {
-		} catch (CertificateException e) {
-		} catch (IOException e) {
-		}
-		return res;
 	}
     
     /**

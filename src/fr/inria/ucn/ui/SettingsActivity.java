@@ -18,21 +18,14 @@
  ******************************************************************************/
 package fr.inria.ucn.ui;
 
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
-
 import fr.inria.ucn.Constants;
 import fr.inria.ucn.Helpers;
 import fr.inria.ucn.R;
 import fr.inria.ucn.Scheduler;
 import android.app.Activity;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.security.KeyChain;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
@@ -88,44 +81,7 @@ public class SettingsActivity extends Activity {
 				edit.commit();
 				
 				if (isChecked) {
-					Log.d(Constants.LOGTAG, "enable data collector");
-					
-					// TODO: remove once the UK server has a valid SSL cert
-					// hack start
-					String country = prefs.getString(Constants.PREF_COUNTRY, null);
-					if ("UK".equals(country)) {
-						String uploadurl = Constants.UPLOAD_URLS.get(country);
-						if (uploadurl!=null) {
-							BufferedInputStream bis = null;
-							try {
-								URL url = new URL(uploadurl);
-								if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.ICE_CREAM_SANDWICH &&
-										!Helpers.isCaCertInstalledHack(url.getHost()) && url.getProtocol().equals("https")) 
-								{					
-									// prompt user to install the self-signed ca certificate - for https uploads
-									Log.d(Constants.LOGTAG, "missing required ca certificate for " + url.getHost()); 
-									bis = new BufferedInputStream(getAssets().open(url.getHost() + ".ca.pem"));
-									byte[] keychain = new byte[bis.available()];
-									bis.read(keychain);
-
-									Intent installIntent = KeyChain.createInstallIntent();
-									installIntent.putExtra(KeyChain.EXTRA_CERTIFICATE, keychain);
-									installIntent.putExtra(KeyChain.EXTRA_NAME, url.getHost());
-									startActivityForResult(installIntent, 1);		
-								}
-							} catch (MalformedURLException e) {
-							} catch (IOException e) {
-								Log.e(Constants.LOGTAG, "failed to read certificate",e); 
-							} finally {
-								if (bis!=null)
-									try {
-										bis.close();
-									} catch (IOException e) {
-									}
-							}
-						}
-					} // hack end
-					
+					Log.d(Constants.LOGTAG, "enable data collector");					
 					Helpers.startCollector(getApplicationContext(), false);
 				} else {
 					Log.d(Constants.LOGTAG, "disable data collector");
