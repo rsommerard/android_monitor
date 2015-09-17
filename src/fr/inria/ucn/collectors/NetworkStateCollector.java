@@ -395,6 +395,7 @@ public class NetworkStateCollector extends BroadcastReceiver implements Collecto
 		    	if (line.contains("mtu")) {
 		    		if (iface!=null)
 		    			ifaces.put(iface);
+		    		
 		    		iface = new JSONObject();
 		    		
 		    		String name = tmp[1].replace(":", "");
@@ -415,19 +416,32 @@ public class NetworkStateCollector extends BroadcastReceiver implements Collecto
 					iface.put("mac", tmp[1]);
 		    	} else if (line.startsWith("inet6")) {
 		    		JSONObject ipv6 = new JSONObject();
-					ipv6.put("ip", tmp[1].substring(0,tmp[1].indexOf('/')));
-					ipv6.put("mask", tmp[1].substring(tmp[1].indexOf('/')+1));
+		    		
+		    		int idx = tmp[1].indexOf('/');
+		    		if (idx > 0) {
+		    			ipv6.put("ip", tmp[1].substring(0,idx));
+						ipv6.put("mask", tmp[1].substring(idx+1));
+		    		} else {
+		    			ipv6.put("ip", tmp[1]);
+		    		}
 					ipv6.put("scope", tmp[3]);
 					iface.put("ipv6",ipv6);
+					
 		    	} else if (line.startsWith("inet")) {
 		    		JSONObject ipv4 = new JSONObject();
-					ipv4.put("ip", tmp[1].substring(0,tmp[1].indexOf('/')));
-					ipv4.put("mask", tmp[1].substring(tmp[1].indexOf('/')+1));
+		    		int idx = tmp[1].indexOf('/');
+		    		if (idx > 0) {
+						ipv4.put("ip", tmp[1].substring(0,idx));
+						ipv4.put("mask", tmp[1].substring(idx+1));
+		    		} else {
+						ipv4.put("ip", tmp[1]);		    			
+		    		}
 					int i = 2;
 					while (i<tmp.length-1) {
 		    			ipv4.put(tmp[i], tmp[i+1]);
 		    			i = i+2;
 		    		}
+					
 					iface.put("ipv4",ipv4);
 		    	}
 		    }

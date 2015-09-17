@@ -99,8 +99,8 @@ public interface Constants {
     
     @SuppressWarnings("serial")
 	public static final Map<String, String> UPLOAD_URLS = new HashMap<String,String>() {{
-    	put("FR","https://muse.inria.fr/upload/");
-    	put("UK","https://ucnproject.uk/upload/");
+    	put("FR","https://muse.inria.fr/ucnupload/");
+    	put("UK","https://ucnproject.uk/ucnupload/");
     }};
     
     @SuppressWarnings("serial")
